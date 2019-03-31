@@ -60,7 +60,7 @@ parser.add_argument('--content_dir', type=str, required=True,
                     help='Directory path to a batch of content images')
 parser.add_argument('--style_dir', type=str, required=True,
                     help='Directory path to a batch of style images')
-parser.add_argument('--vgg', type=str, default='models/vgg_normalised.pth')
+parser.add_argument('--enc', type=str, default='models/vgg_normalised.pth')
 
 # training options
 parser.add_argument('--save_dir', default='./experiments',
@@ -88,23 +88,23 @@ if not os.path.exists(args.log_dir):
 writer = SummaryWriter(log_dir=args.log_dir)
 
 # if we don't get the model we use vgg
-if args.vgg == 'models/vgg_normalised.pth':
+if args.enc == 'models/vgg_normalised.pth':
     # define decoder and encoder
     decoder = net.decoder
     encoder = net.vgg
     # load encoder weights and cut end of it
-    encoder.load_state_dict(torch.load(args.vgg))
+    encoder.load_state_dict(torch.load(args.enc))
     encoder = nn.Sequential(*list(encoder.children())[:31])
 else:
     # define decoder and encoder
     decoder = net.res_decoder
     encoder = net.res
     # load encoder weights and cut end of it
-    encoder.load_state_dict(torch.load(args.vgg))
+    encoder.load_state_dict(torch.load(args.enc))
     last_block_child=list(list(encoder.children())[7][1].children())
     encoder = nn.Sequential(*list(encoder.children())[:7], list(encoder.children())[7][0], *last_block_child[:3])
 
-network = net.Net(encoder, decoder, args.vgg == 'models/vgg_normalised.pth')
+network = net.Net(encoder, decoder, args.enc == 'models/vgg_normalised.pth')
 network.train()
 network.to(device)
 

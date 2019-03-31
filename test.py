@@ -8,8 +8,6 @@ from os.path import splitext
 from torchvision import transforms
 from torchvision.utils import save_image
 
-from torchvision import models
-
 import net
 from function import adaptive_instance_normalization
 from function import coral
@@ -56,8 +54,8 @@ parser.add_argument('--style', type=str,
                     interpolation or spatial control')
 parser.add_argument('--style_dir', type=str,
                     help='Directory path to a batch of style images')
-parser.add_argument('--vgg', type=str, default='models/vgg_normalised.pth')
-parser.add_argument('--decoder', type=str, default='models/decoder.pth')
+parser.add_argument('--enc', type=str, default='models/vgg_normalised.pth')
+parser.add_argument('--dec', type=str, default='models/decoder.pth')
 
 # Additional options
 parser.add_argument('--content_size', type=int, default=512,
@@ -118,26 +116,26 @@ if not os.path.exists(args.output):
     os.mkdir(args.output)
 
 # if we don't get the model we use vgg
-if args.vgg == 'models/vgg_normalised.pth':
+if args.enc == 'models/vgg_normalised.pth':
     # define decoder and encoder
     decoder = net.decoder
     encoder = net.vgg
     # load encoder weights and cut end of it
-    encoder.load_state_dict(torch.load(args.vgg))
+    encoder.load_state_dict(torch.load(args.enc))
     encoder = nn.Sequential(*list(encoder.children())[:31])
 else:
     # define decoder and encoder
     decoder = net.res_decoder
     encoder = net.res
     # load encoder weights and cut end of it
-    encoder.load_state_dict(torch.load(args.vgg))
+    encoder.load_state_dict(torch.load(args.enc))
     last_block_child=list(list(encoder.children())[7][1].children())
     encoder = nn.Sequential(*list(encoder.children())[:7], list(encoder.children())[7][0], *last_block_child[:3])
 
 decoder.eval()
 encoder.eval()
 
-decoder.load_state_dict(torch.load(args.decoder))
+decoder.load_state_dict(torch.load(args.dec))
 
 encoder.to(device)
 decoder.to(device)

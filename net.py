@@ -14,9 +14,8 @@ class Identity(nn.BatchNorm2d):
 def conv3x3_dec(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
     if in_planes != out_planes:
-        return nn.Sequential(nn.Upsample(scale_factor=2, mode='nearest'),
-                             nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, 
-                                       padding=1, bias=False))
+        return nn.ConvTranspose2d(in_planes, out_planes, kernel_size=4, stride=2, 
+                                  padding=1, bias=False)
     else:
         return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
                      padding=1, bias=False)
@@ -183,12 +182,11 @@ class ResDec(nn.Module):
         self.layer3 = self._make_layer(block, 256, layers[2], stride=1, norm_layer=norm_layer)
         self.layer2 = self._make_layer(block, 128, layers[1], stride=1, norm_layer=norm_layer)
         self.layer1 = self._make_layer(block, 64, layers[0], stride=1, norm_layer=norm_layer)
-        self.up2 = nn.Upsample(scale_factor=2, mode='nearest')
+        self.up1 = nn.Upsample(scale_factor=2, mode='nearest')
         self.relu = nn.ReLU(inplace=True)
         self.bn1 = norm_layer(64)
-        self.up1 = nn.Upsample(scale_factor=2, mode='nearest')
-        self.conv1 = nn.Conv2d(64, 3, kernel_size=7, stride=1, padding=3,
-                               bias=False)
+        self.conv1 = nn.ConvTranspose2d(64, 3, kernel_size=4, stride=2, 
+                                        padding=1, bias=False)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -204,8 +202,8 @@ class ResDec(nn.Module):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                nn.Upsample(scale_factor=2, mode='nearest'),
-                conv1x1(self.inplanes, planes * block.expansion, stride),
+                nn.ConvTranspose2d(self.inplanes, planes * block.expansion, kernel_size=4, stride=2, 
+                                   padding=1, bias=False),
                 norm_layer(planes * block.expansion),
             )
 
@@ -223,16 +221,15 @@ class ResDec(nn.Module):
         x = self.layer2(x)
         x = self.layer1(x)
 
-        x = self.up2(x)
+        x = self.up1(x)
         x = self.relu(x)
         x = self.bn1(x)
-        x = self.up1(x)
         x = self.conv1(x)
 
         return x
 
-res_decoder = ResDec(BasicBlock_dec, [2, 2, 2, 2], norm_layer=Identity)
-res = ResNet(BasicBlock, [2, 2, 2, 2], norm_layer=Identity)
+res_decoder = ResDec(BasicBlock_dec, [2, 2, 2, 2])#, norm_layer=Identity)
+res = ResNet(BasicBlock, [2, 2, 2, 2])#, norm_layer=Identity)
 """nn.Sequential(
     nn.BatchNorm2d(512),
     nn.Conv2d(512, 512, kernel_size=3, padding=1, bias=False),
@@ -448,34 +445,53 @@ class Net(nn.Module):
             self.enc_3 = nn.Sequential(*enc_layers[11:18])  # relu2_1 -> relu3_1
             self.enc_4 = nn.Sequential(*enc_layers[18:31])  # relu3_1 -> relu4_1
             self.decoder = decoder
+            self.num_enc = 4 
         else: #resnet
-            enc_layers_c_2=list(enc_layers[5][1].children())
-            enc_layers_c_3=list(enc_layers[6][1].children())
-            self.enc_1 = nn.Sequential(*enc_layers[:3])	
-            self.enc_2 = nn.Sequential(*enc_layers[3:5], enc_layers[5][0], *enc_layers_c_2[:3])	
-            self.enc_3 = nn.Sequential(*enc_layers_c_2[3:],enc_layers[6][0],*enc_layers_c_3[:3])
-            self.enc_4 = nn.Sequential(*enc_layers_c_3[3:],*enc_layers[7:])
+            enc_layers_c_0=list(enc_layers[4][0].children())
+            enc_layers_c_1=list(enc_layers[4][1].children()) 
+            self.enc_1 = nn.Sequential(*enc_layers[:3])
+            self.enc_2 = nn.Sequential(enc_layers[3],*enc_layers_c_0[:3])
+            self.enc_3 = nn.Sequential(*enc_layers_c_0[3:],*enc_layers_c_1[:3])
+            enc_layers_c_0=list(enc_layers[5][0].children())
+            self.enc_4 = nn.Sequential(*enc_layers_c_1[3:],*enc_layers_c_0[:3])
+            enc_layers_c_1=list(enc_layers[5][1].children())
+            self.enc_5 = nn.Sequential(*enc_layers_c_0[3:-1],*enc_layers_c_1[:3])
+            enc_layers_c_0=list(enc_layers[6][0].children())
+            self.enc_6 = nn.Sequential(*enc_layers_c_1[3:],*enc_layers_c_0[:3])
+            enc_layers_c_1=list(enc_layers[6][1].children())
+            self.enc_7 = nn.Sequential(*enc_layers_c_0[3:-1],*enc_layers_c_1[:3])
+            enc_layers_c_0=list(enc_layers[7].children())
+            self.enc_8 = nn.Sequential(*enc_layers_c_1[3:],*enc_layers_c_0[:3])
+            self.enc_9 = nn.Sequential(*enc_layers_c_0[3:-1],*enc_layers[8:])
+            
+            #enc_layers_c_2=list(enc_layers[5][1].children())
+            #enc_layers_c_3=list(enc_layers[6][1].children())
+            #self.enc_1 = nn.Sequential(*enc_layers[:3])	
+            #self.enc_2 = nn.Sequential(*enc_layers[3:5], enc_layers[5][0], *enc_layers_c_2[:3])	
+            #self.enc_3 = nn.Sequential(*enc_layers_c_2[3:],enc_layers[6][0],*enc_layers_c_3[:3])
+            #self.enc_4 = nn.Sequential(*enc_layers_c_3[3:],*enc_layers[7:])
             dec_layers = list(decoder.children())
             dec_layers_c_0 = list(dec_layers[0][0].children())
             self.decoder = nn.Sequential(*dec_layers_c_0[2:],*dec_layers[1:])
+            self.num_enc = 9
         self.mse_loss = nn.MSELoss()
 
         # fix the encoder
-        for name in ['enc_1', 'enc_2', 'enc_3', 'enc_4']:
-            for param in getattr(self, name).parameters():
+        for i in range(self.num_enc):
+            for param in getattr(self, 'enc_{:d}'.format(i + 1)).parameters():
                 param.requires_grad = False
 
     # extract relu1_1, relu2_1, relu3_1, relu4_1 from input image
     def encode_with_intermediate(self, input):
         results = [input]
-        for i in range(4):
+        for i in range(self.num_enc):
             func = getattr(self, 'enc_{:d}'.format(i + 1))
             results.append(func(results[-1]))
         return results[1:]
 
     # extract relu4_1 from input image
     def encode(self, input):
-        for i in range(4):
+        for i in range(self.num_enc):
             input = getattr(self, 'enc_{:d}'.format(i + 1))(input)
         return input
 
@@ -504,6 +520,6 @@ class Net(nn.Module):
         
         loss_c = self.calc_content_loss(g_t_feats[-1], t)
         loss_s = self.calc_style_loss(g_t_feats[0], style_feats[0])
-        for i in range(1, 4):
+        for i in range(1, len(style_feats)):
             loss_s += self.calc_style_loss(g_t_feats[i], style_feats[i])
         return loss_c, loss_s
