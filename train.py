@@ -95,16 +95,30 @@ if args.enc == 'models/vgg_normalised.pth':
     # load encoder weights and cut end of it
     encoder.load_state_dict(torch.load(args.enc))
     encoder = nn.Sequential(*list(encoder.children())[:31])
+    switch = 0
 else:
-    # define decoder and encoder
-    decoder = net.res_decoder
-    encoder = net.res
-    # load encoder weights and cut end of it
-    encoder.load_state_dict(torch.load(args.enc))
-    last_block_child=list(list(encoder.children())[7][1].children())
-    encoder = nn.Sequential(*list(encoder.children())[:7], list(encoder.children())[7][0], *last_block_child[:3])
-
-network = net.Net(encoder, decoder, args.enc == 'models/vgg_normalised.pth')
+    if args.enc == 'models/resnet18-5c106cde.pth':
+        # define decoder and encoder
+        decoder = net.res_dec
+        encoder = net.res
+        # load encoder weights and cut end of it
+        encoder.load_state_dict(torch.load(args.enc))
+        #last_block_child=list(list(encoder.children())[7][1].children())
+        #encoder = nn.Sequential(*list(encoder.children())[:7], list(encoder.children())[7][0], *last_block_child[:3])
+        encoder = nn.Sequential(*list(encoder.children())[:8])
+        switch = 1
+    else:
+        # inception 3
+        decoder = net.inc_dec
+        encoder = net.inc
+        # load encoder weights and cut end of it
+        encoder.load_state_dict(torch.load(args.enc))
+        encoder = nn.Sequential(*list(encoder.children())[:3],
+                            nn.MaxPool2d(kernel_size=3, stride=2),*list(encoder.children())[3:5])
+        decoder = nn.Sequential(*list(decoder.children())[6:])
+        switch = 2
+    
+network = net.Net(encoder, decoder, switch)
 network.train()
 network.to(device)
 
