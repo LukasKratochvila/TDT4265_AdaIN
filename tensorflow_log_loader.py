@@ -21,15 +21,16 @@ def plot_tensorflow_log(path, save_dir):
 
     # Show all tags in the log file
     #print(event_acc.Tags())
-
-    loss_content =   event_acc.Scalars('loss_content')
+    
+    loss_content = event_acc.Scalars('loss_content')
     loss_style = event_acc.Scalars('loss_style')
 
     steps = len(loss_content)
-    x = np.arange(steps)
+    x = np.zeros([steps, 1])#np.arange(steps)
     y = np.zeros([steps, 2])
 
     for i in range(steps):
+        x[i] = loss_content[i][1] #step
         y[i, 0] = loss_content[i][2] # value
         y[i, 1] = loss_style[i][2]
 

@@ -114,8 +114,9 @@ else:
         # load encoder weights and cut end of it
         encoder.load_state_dict(torch.load(args.enc))
         encoder = nn.Sequential(*list(encoder.children())[:3],
-                            nn.MaxPool2d(kernel_size=3, stride=2),*list(encoder.children())[3:5])
-        decoder = nn.Sequential(*list(decoder.children())[6:])
+                                nn.MaxPool2d(kernel_size=3,stride=2),
+                                *list(encoder.children())[3:5])
+        decoder = nn.Sequential(*list(decoder.children())[7:])
         switch = 2
     
 network = net.Net(encoder, decoder, switch)

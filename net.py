@@ -114,13 +114,15 @@ class Inception3_dec(nn.Module):
         self.Mixed_5c = InceptionA_dec(288, 256, pool_features=64)
         self.Mixed_5b = InceptionA_dec(256, 192, pool_features=32)
         
-        self.up2 = nn.ConvTranspose2d(192, 192, kernel_size=3, stride=2)
-        
+        #self.up2 = nn.ConvTranspose2d(192, 192, kernel_size=3, stride=2)
+        self.up2 = nn.Upsample(scale_factor=2.02, mode='nearest')       
+
         self.Conv2d_4a_3x3 = BasicConv2d(192, 80, kernel_size=3)
         self.Conv2d_3b_1x1 = BasicConv2d(80, 64, kernel_size=1)
         
-        self.up1 = nn.ConvTranspose2d(64, 64, kernel_size=3, stride=2)
-        
+        #self.up1 = nn.ConvTranspose2d(64, 64, kernel_size=3, stride=2)
+        self.up1 = nn.Upsample(scale_factor=2.02, mode='nearest')
+
         self.Conv2d_2b_3x3 = BasicConv2d(64, 32, kernel_size=3, padding=1)
         self.Conv2d_2a_3x3 = BasicConv2d(32, 32, kernel_size=3)
         self.Conv2d_1a_3x3 = BasicConv2d(32, 3, kernel_size=3, stride=2)
@@ -312,10 +314,14 @@ class BasicConv2d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, **kwargs):
         super(BasicConv2d, self).__init__()
         self.bn = nn.BatchNorm2d(in_channels, eps=0.001)
-        if stride != 1 or padding == 0:
-            self.conv = nn.ConvTranspose2d(in_channels, out_channels, bias=False, stride=stride, kernel_size=kernel_size, padding=padding, **kwargs)
+        if stride != 1:
+            self.conv = nn.Sequential(nn.Upsample(scale_factor=2.03, mode='nearest'), nn.Conv2d(in_channels, out_channels, bias=False, stride=stride-1, kernel_size=kernel_size, padding=padding+1, **kwargs))
+            #self.conv = nn.ConvTranspose2d(in_channels, out_channels, bias=False, stride=stride, kernel_size=kernel_size, padding=padding, **kwargs)
         else:
-            self.conv = nn.Conv2d(in_channels, out_channels, bias=False, stride=stride, kernel_size=kernel_size, padding=padding, **kwargs)
+            if  padding == 0 and kernel_size > 1:
+                self.conv = nn.Sequential(nn.Upsample(scale_factor=1.01, mode='nearest'), nn.Conv2d(in_channels, out_channels, bias=False, stride=stride, kernel_size=kernel_size, padding=kernel_size//2, **kwargs))
+            else:
+                self.conv = nn.Conv2d(in_channels, out_channels, bias=False, stride=stride, kernel_size=kernel_size, padding=padding, **kwargs)
 
     def forward(self, x):
         x = nn.functional.relu(x, inplace=True)
@@ -380,7 +386,7 @@ class BasicBlock(nn.Module):
         if self.downsample is not None:
             identity = self.downsample(x)
 
-        #out += identity
+        out += identity
         out = self.relu(out)
 
         return out
@@ -487,7 +493,7 @@ class BasicBlock_dec(nn.Module):
         if self.downsample is not None:
             identity = self.downsample(x)
 
-        #out += identity
+        out += identity
         out = self.relu(out)
 
         return out
@@ -523,9 +529,11 @@ class ResDec(nn.Module):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                nn.ConvTranspose2d(self.inplanes, planes * block.expansion, kernel_size=4, stride=2, 
-                                   padding=1, bias=False),
-                norm_layer(planes * block.expansion),
+                norm_layer(self.inplanes),
+		nn.Upsample(scale_factor=2, mode='nearest'),
+		conv1x1(self.inplanes, planes * block.expansion, stride),                
+		#nn.ConvTranspose2d(self.inplanes, planes * block.expansion, kernel_size=4, stride=2, 
+                #                   padding=1, bias=False),
             )
 
         layers = []
@@ -552,8 +560,8 @@ class ResDec(nn.Module):
 #res_decoder = ResDec(BasicBlock_dec, [2, 2, 2, 2])#, norm_layer=Identity)
 #res = ResNet(BasicBlock, [2, 2, 2, 2])#, norm_layer=Identity)
 
-res_dec = ResDec(BasicBlock_dec,[2,2,2,2],norm_layer=Identity)
-res = ResNet(BasicBlock,[2,2,2,2],norm_layer=Identity)
+res_dec = ResDec(BasicBlock_dec,[2,2,2,2])#,norm_layer=Identity)
+res = ResNet(BasicBlock,[2,2,2,2])#,norm_layer=Identity)
 inc_dec = Inception3_dec()
 inc = Inception3()
 """nn.Sequential(
@@ -820,15 +828,14 @@ class Net(nn.Module):
                 self.enc_1 = nn.Sequential(enc_layers[0])
                 self.enc_2 = nn.Sequential(enc_layers[1])
                 self.enc_3 = nn.Sequential(enc_layers[2])
-                self.enc_4 = nn.Sequential(nn.MaxPool2d(kernel_size=3, 
-                                                        stride=2),enc_layers[3])
-                self.enc_5 = nn.Sequential(enc_layers[4])
+                self.enc_4 = nn.Sequential(*enc_layers[3:5])
+                #self.enc_5 = nn.Sequential(enc_layers[5])
                 #self.enc_6 = nn.Sequential(enc_layers[5])
                 #self.enc_7 = nn.Sequential(enc_layers[6])
                 #self.enc_8 = nn.Sequential(enc_layers[7])
                 #self.enc_9 = nn.Sequential(enc_layers[8])
                 #self.enc_10 = nn.Sequential(enc_layers[9])
-                self.num_enc = 5 
+                self.num_enc = 4 
                 self.decoder = decoder
                         
         self.mse_loss = nn.MSELoss()
@@ -874,7 +881,7 @@ class Net(nn.Module):
         
         g_t = self.decoder(t)
         g_t_feats = self.encode_with_intermediate(g_t)
-
+        #print(g_t_feats[-1].shape, t.shape)
         loss_c = self.calc_content_loss(g_t_feats[-1], t)
         loss_s = self.calc_style_loss(g_t_feats[0], style_feats[0])
         for i in range(1, len(style_feats)):
