@@ -56,11 +56,11 @@ def adjust_learning_rate(optimizer, iteration_count):
 
 parser = argparse.ArgumentParser()
 # Basic options
-parser.add_argument('--content_dir', type=str, required=True,
+parser.add_argument('--content_dir', type=str, required=False, default='input/content/',
                     help='Directory path to a batch of content images')
-parser.add_argument('--style_dir', type=str, required=True,
+parser.add_argument('--style_dir', type=str, required=False, default='input/style/',
                     help='Directory path to a batch of style images')
-parser.add_argument('--enc', type=str, default='models/vgg_normalised.pth')
+parser.add_argument('--vgg', type=str, default='models/vgg_normalised.pth')
 
 # training options
 parser.add_argument('--save_dir', default='./experiments',
@@ -75,7 +75,6 @@ parser.add_argument('--style_weight', type=float, default=10.0)
 parser.add_argument('--content_weight', type=float, default=1.0)
 parser.add_argument('--n_threads', type=int, default=16)
 parser.add_argument('--save_model_interval', type=int, default=10000)
-
 args = parser.parse_args()
 
 device = torch.device('cuda')
@@ -87,39 +86,12 @@ if not os.path.exists(args.log_dir):
     os.mkdir(args.log_dir)
 writer = SummaryWriter(log_dir=args.log_dir)
 
-# if we don't get the model we use vgg
-if args.enc == 'models/vgg_normalised.pth':
-    # define decoder and encoder
-    decoder = net.decoder
-    encoder = net.vgg
-    # load encoder weights and cut end of it
-    encoder.load_state_dict(torch.load(args.enc))
-    encoder = nn.Sequential(*list(encoder.children())[:31])
-    switch = 0
-else:
-    if args.enc == 'models/resnet18-5c106cde.pth':
-        # define decoder and encoder
-        decoder = net.res_dec
-        encoder = net.res
-        # load encoder weights and cut end of it
-        encoder.load_state_dict(torch.load(args.enc))
-        #last_block_child=list(list(encoder.children())[7][1].children())
-        #encoder = nn.Sequential(*list(encoder.children())[:7], list(encoder.children())[7][0], *last_block_child[:3])
-        encoder = nn.Sequential(*list(encoder.children())[:8])
-        switch = 1
-    else:
-        # inception 3
-        decoder = net.inc_dec
-        encoder = net.inc
-        # load encoder weights and cut end of it
-        encoder.load_state_dict(torch.load(args.enc))
-        encoder = nn.Sequential(*list(encoder.children())[:3],
-                                nn.MaxPool2d(kernel_size=3,stride=2),
-                                *list(encoder.children())[3:5])
-        decoder = nn.Sequential(*list(decoder.children())[7:])
-        switch = 2
-    
-network = net.Net(encoder, decoder, switch)
+decoder = net.decoder
+vgg = net.vgg
+
+vgg.load_state_dict(torch.load(args.vgg))
+vgg = nn.Sequential(*list(vgg.children())[:31])
+network = net.Net(vgg, decoder)
 network.train()
 network.to(device)
 
@@ -157,10 +129,10 @@ for i in tqdm(range(args.max_iter)):
     writer.add_scalar('loss_style', loss_s.item(), i + 1)
 
     if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
-        state_dict = decoder.state_dict()
+        state_dict = net.decoder.state_dict()
         for key in state_dict.keys():
             state_dict[key] = state_dict[key].to(torch.device('cpu'))
         torch.save(state_dict,
-                   '{:s}/decoder_iter_{:d}.pth'.format(args.save_dir,
+                   '{:s}/decoder_iter_{:d}.pth.tar'.format(args.save_dir,
                                                            i + 1))
 writer.close()

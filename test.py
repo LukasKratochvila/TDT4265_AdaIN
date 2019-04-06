@@ -54,8 +54,8 @@ parser.add_argument('--style', type=str,
                     interpolation or spatial control')
 parser.add_argument('--style_dir', type=str,
                     help='Directory path to a batch of style images')
-parser.add_argument('--enc', type=str, default='models/vgg_normalised.pth')
-parser.add_argument('--dec', type=str, default='models/decoder.pth')
+parser.add_argument('--vgg', type=str, default='models/vgg_normalised.pth')
+parser.add_argument('--decoder', type=str, default='models/decoder.pth')
 
 # Additional options
 parser.add_argument('--content_size', type=int, default=512,
@@ -115,40 +115,17 @@ else:
 if not os.path.exists(args.output):
     os.mkdir(args.output)
 
-# if we don't get the model we use vgg
-if args.enc == 'models/vgg_normalised.pth':
-    # define decoder and encoder
-    decoder = net.decoder
-    encoder = net.vgg
-    # load encoder weights and cut end of it
-    encoder.load_state_dict(torch.load(args.enc))
-    encoder = nn.Sequential(*list(encoder.children())[:31])
-else:
-    if args.enc == 'models/resnet18-5c106cde.pth':
-        # define decoder and encoder
-        decoder = net.res_dec
-        encoder = net.res
-        # load encoder weights and cut end of it
-        encoder.load_state_dict(torch.load(args.enc))
-        #last_block_child=list(list(encoder.children())[7][1].children())
-        #encoder = nn.Sequential(*list(encoder.children())[:7], list(encoder.children())[7][0], *last_block_child[:3])
-        encoder = nn.Sequential(*list(encoder.children())[:8])
-    else:
-        # inception 3
-        decoder = net.inc_dec
-        encoder = net.inc
-        # load encoder weights and cut end of it
-        encoder.load_state_dict(torch.load(args.enc))
-        encoder = nn.Sequential(*list(encoder.children())[:3],
-                            nn.MaxPool2d(kernel_size=3, stride=2),*list(encoder.children())[3:4])
-        decoder = nn.Sequential(*list(decoder.children())[7:])
-    
+decoder = net.decoder
+vgg = net.vgg
+
 decoder.eval()
-encoder.eval()
+vgg.eval()
 
-decoder.load_state_dict(torch.load(args.dec))
+decoder.load_state_dict(torch.load(args.decoder))
+vgg.load_state_dict(torch.load(args.vgg))
+vgg = nn.Sequential(*list(vgg.children())[:31])
 
-encoder.to(device)
+vgg.to(device)
 decoder.to(device)
 
 content_tf = test_transform(args.content_size, args.crop)
@@ -162,7 +139,7 @@ for content_path in content_paths:
         style = style.to(device)
         content = content.to(device)
         with torch.no_grad():
-            output = style_transfer(encoder, decoder, content, style,
+            output = style_transfer(vgg, decoder, content, style,
                                     args.alpha, interpolation_weights)
         output = output.cpu()
         output_name = '{:s}/{:s}_interpolation{:s}'.format(
@@ -178,7 +155,7 @@ for content_path in content_paths:
             style = style.to(device).unsqueeze(0)
             content = content.to(device).unsqueeze(0)
             with torch.no_grad():
-                output = style_transfer(encoder, decoder, content, style,
+                output = style_transfer(vgg, decoder, content, style,
                                         args.alpha)
             output = output.cpu()
 
