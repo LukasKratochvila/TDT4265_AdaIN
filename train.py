@@ -11,6 +11,7 @@ from torchvision import transforms
 from tqdm import tqdm
 
 import net
+import ResNet
 from sampler import InfiniteSamplerWrapper
 
 cudnn.benchmark = True
@@ -60,7 +61,8 @@ parser.add_argument('--content_dir', type=str, required=False, default='input/co
                     help='Directory path to a batch of content images')
 parser.add_argument('--style_dir', type=str, required=False, default='input/style/',
                     help='Directory path to a batch of style images')
-parser.add_argument('--vgg', type=str, default='models/vgg_normalised.pth')
+parser.add_argument('--enc', type=str, default='models/vgg_normalised.pth')
+parser.add_argument('--dec', type=str, default='vgg')
 
 # training options
 parser.add_argument('--save_dir', default='./experiments',
@@ -86,12 +88,17 @@ if not os.path.exists(args.log_dir):
     os.mkdir(args.log_dir)
 writer = SummaryWriter(log_dir=args.log_dir)
 
-decoder = net.decoder
-vgg = net.vgg
+if args.dec == 'resnet18':
+    decoder = ResNet.resnet18_dec()
+else:
+    decoder = net.decoder
 
-vgg.load_state_dict(torch.load(args.vgg))
-vgg = nn.Sequential(*list(vgg.children())[:53])
-network = net.Net(vgg, decoder)
+encoder = net.vgg
+encoder.load_state_dict(torch.load(args.enc))
+#deeper VGG
+#vgg = nn.Sequential(*list(vgg.children())[:53])
+encoder = nn.Sequential(*list(encoder.children())[:31])
+network = net.Net(encoder, decoder)
 network.train()
 network.to(device)
 

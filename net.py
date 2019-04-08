@@ -33,7 +33,8 @@ decoder = nn.Sequential(
     nn.ReLU(),
     nn.ReflectionPad2d((1, 1, 1, 1)),
     nn.Conv2d(64, 3, (3, 3)),
-    nn.Upsample(scale_factor=2, mode='nearest'),
+    #deeper VGG
+    #nn.Upsample(scale_factor=2, mode='nearest'),
 )
 
 vgg = nn.Sequential(
@@ -102,20 +103,13 @@ class Net(nn.Module):
         self.enc_3 = nn.Sequential(*enc_layers[11:18])  # relu2_1 -> relu3_1
         self.enc_4 = nn.Sequential(*enc_layers[18:31])  # relu3_1 -> relu4_1
 
-        self.enc_5 = nn.Sequential(*enc_layers[31:40])  # relu4_1 -> relu5_1
-        self.enc_6 = nn.Sequential(*enc_layers[40:53])  # relu5_1 -> relu5_4
-
+        #deeper VGG
+        #self.enc_5 = nn.Sequential(*enc_layers[31:40])  # relu4_1 -> relu5_1
+        #self.enc_6 = nn.Sequential(*enc_layers[40:53])  # relu5_1 -> relu5_4
 
         self.decoder = decoder
-
-        self.num_enc = 6
-
+        self.num_enc = 4
         self.mse_loss = nn.MSELoss()
-
-        """         # fix the encoder
-        for name in ['enc_1', 'enc_2', 'enc_3', 'enc_4']:
-            for param in getattr(self, name).parameters():
-                param.requires_grad = False """
 
         # fix the encoder
         for i in range(self.num_enc):
