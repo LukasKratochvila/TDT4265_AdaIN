@@ -33,8 +33,6 @@ decoder = nn.Sequential(
     nn.ReLU(),
     nn.ReflectionPad2d((1, 1, 1, 1)),
     nn.Conv2d(64, 3, (3, 3)),
-    #deeper VGG
-    #nn.Upsample(scale_factor=2, mode='nearest'),
 )
 
 vgg = nn.Sequential(

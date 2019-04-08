@@ -9,6 +9,8 @@ from torchvision import transforms
 from torchvision.utils import save_image
 
 import net
+import ResNet
+import VGG19
 from function import adaptive_instance_normalization
 from function import coral
 
@@ -115,7 +117,14 @@ else:
 if not os.path.exists(args.output):
     os.mkdir(args.output)
 
-decoder = net.decoder
+
+if args.decoder == 'experiments/resnet_decoder_iter_5000.pth':
+    decoder = ResNet.resnet18_dec()
+elif args.decoder == 'experiments/vgg19_decoder_iter_1000.pth':
+    decoder = VGG19.vgg19_dec
+else:
+    decoder = net.decoder
+
 vgg = net.vgg
 
 decoder.eval()
@@ -123,6 +132,8 @@ vgg.eval()
 
 decoder.load_state_dict(torch.load(args.decoder))
 vgg.load_state_dict(torch.load(args.vgg))
+#deeper vgf
+#vgg = nn.Sequential(*list(vgg.children())[:53])
 vgg = nn.Sequential(*list(vgg.children())[:31])
 
 vgg.to(device)

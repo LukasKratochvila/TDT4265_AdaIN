@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 import net
 import ResNet
+import VGG19
 from sampler import InfiniteSamplerWrapper
 
 cudnn.benchmark = True
@@ -88,15 +89,18 @@ if not os.path.exists(args.log_dir):
     os.mkdir(args.log_dir)
 writer = SummaryWriter(log_dir=args.log_dir)
 
+
 if args.dec == 'resnet18':
     decoder = ResNet.resnet18_dec()
+elif args.dec == 'vgg19':
+    decoder = VGG19.vgg19_dec
 else:
     decoder = net.decoder
 
 encoder = net.vgg
 encoder.load_state_dict(torch.load(args.enc))
 #deeper VGG
-#vgg = nn.Sequential(*list(vgg.children())[:53])
+#encoder = nn.Sequential(*list(encoder.children())[:53])
 encoder = nn.Sequential(*list(encoder.children())[:31])
 network = net.Net(encoder, decoder)
 network.train()
@@ -136,10 +140,10 @@ for i in tqdm(range(args.max_iter)):
     writer.add_scalar('loss_style', loss_s.item(), i + 1)
 
     if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
-        state_dict = net.decoder.state_dict()
+        state_dict = decoder.state_dict()
         for key in state_dict.keys():
             state_dict[key] = state_dict[key].to(torch.device('cpu'))
         torch.save(state_dict,
-                   '{:s}/decoder_iter_{:d}.pth.tar'.format(args.save_dir,
+                   '{:s}/decoder_iter_{:d}.pth'.format(args.save_dir,
                                                            i + 1))
 writer.close()
