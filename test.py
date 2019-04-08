@@ -118,35 +118,20 @@ if not os.path.exists(args.output):
 # if we don't get the model we use vgg
 if args.enc == 'models/vgg_normalised.pth':
     # define decoder and encoder
-    decoder = net.decoder
-    encoder = net.vgg
-    # load encoder weights and cut end of it
-    encoder.load_state_dict(torch.load(args.enc))
-    encoder = nn.Sequential(*list(encoder.children())[:31])
+    encoder, decoder = net.vgg19(args.enc, True, args.dec)
+    switch = 0
 else:
     if args.enc == 'models/resnet18-5c106cde.pth':
         # define decoder and encoder
-        decoder = net.res_dec
-        encoder = net.res
-        # load encoder weights and cut end of it
-        encoder.load_state_dict(torch.load(args.enc))
-        #last_block_child=list(list(encoder.children())[7][1].children())
-        #encoder = nn.Sequential(*list(encoder.children())[:7], list(encoder.children())[7][0], *last_block_child[:3])
-        encoder = nn.Sequential(*list(encoder.children())[:8])
+        encoder, decoder = net.resnet18(args.enc, True, decoder=args.dec)
+        switch = 1
     else:
         # inception 3
-        decoder = net.inc_dec
-        encoder = net.inc
-        # load encoder weights and cut end of it
-        encoder.load_state_dict(torch.load(args.enc))
-        encoder = nn.Sequential(*list(encoder.children())[:3],
-                            nn.MaxPool2d(kernel_size=3, stride=2),*list(encoder.children())[3:4])
-        decoder = nn.Sequential(*list(decoder.children())[7:])
+        encoder, decoder = net.inception3(args.enc, True, decoder=args.dec)
+        switch = 2
     
 decoder.eval()
 encoder.eval()
-
-decoder.load_state_dict(torch.load(args.dec))
 
 encoder.to(device)
 decoder.to(device)
