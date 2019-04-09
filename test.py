@@ -57,7 +57,8 @@ parser.add_argument('--style', type=str,
 parser.add_argument('--style_dir', type=str,
                     help='Directory path to a batch of style images')
 parser.add_argument('--vgg', type=str, default='models/vgg_normalised.pth')
-parser.add_argument('--decoder', type=str, default='models/decoder.pth')
+parser.add_argument('--decpth', type=str, default='models/decoder.pth')
+parser.add_argument('--decoder', type=str, default='vgg')
 
 # Additional options
 parser.add_argument('--content_size', type=int, default=512,
@@ -118,9 +119,9 @@ if not os.path.exists(args.output):
     os.mkdir(args.output)
 
 
-if args.decoder == 'experiments/resnet_decoder_iter_5000.pth':
+if args.decoder == 'resnet18':
     decoder = ResNet.resnet18_dec()
-elif args.decoder == 'experiments/vgg19_decoder_iter_1000.pth':
+elif args.decoder == 'vgg19':
     decoder = VGG19.vgg19_dec
 else:
     decoder = net.decoder
@@ -130,7 +131,7 @@ vgg = net.vgg
 decoder.eval()
 vgg.eval()
 
-decoder.load_state_dict(torch.load(args.decoder))
+decoder.load_state_dict(torch.load(args.decpth))
 vgg.load_state_dict(torch.load(args.vgg))
 #deeper vgf
 #vgg = nn.Sequential(*list(vgg.children())[:53])
