@@ -6,53 +6,57 @@ import net_def
 from function import adaptive_instance_normalization as adain
 from function import calc_mean_std
 
-def vgg19(encoder, test, decoder=None):
+def vgg19(encoder):
     vgg19 = net_def.Vgg19
-    # load encoder weights and cut end of it
     vgg19.load_state_dict(torch.load(encoder))
-    vgg19 = nn.Sequential(*list(vgg19.children())[:31])
-    vgg19_dec = net_def.Vgg19_dec
-    
-    if test:
-        vgg19_dec.load_state_dict(torch.load(decoder))
+    return vgg19
 
-    return vgg19, vgg19_dec
+def vgg19_dec(decoder=None):
+    vgg19_dec = net_def.Vgg19_dec
+    if decoder != None:
+        vgg19_dec.load_state_dict(torch.load(decoder))
+    return vgg19_dec
 
 def resnet18(encoder, test, decoder=None):
     resnet18 = net_def.ResNet(net_def.BasicBlock,[2,2,2,2])#,norm_layer=net_def.Identity)
-    resnet18_dec = net_def.ResDec(net_def.BasicBlock_dec,[2,2,2,2])#,norm_layer=net_def.Identity)
-    # load encoder weights and cut end of it
     resnet18.load_state_dict(torch.load(encoder))
-    #last_block_child=list(list(encoder.children())[7][1].children())
-    #resnet18 = nn.Sequential(*list(encoder.children())[:7], list(encoder.children())[7][0], *last_block_child[:3])
-    resnet18 = nn.Sequential(*list(resnet18.children())[:8])
 
-    if test:
+    return resnet18
+
+def resnet18_dec(decoder=None):
+    resnet18_dec = net_def.ResDec(net_def.BasicBlock_dec,[2,2,2,2])#,norm_layer=net_def.Identity)
+    if decoder != None:
         resnet18_dec.load_state_dict(torch.load(decoder))
-    
-    return resnet18, resnet18_dec
+    return resnet18_dec
 
 def inception3(encoder, test, decoder=None):    
     inception3 = net_def.Inception3()
-    inception3_dec = net_def.Inception3_dec()
-    # load encoder weights and cut end of it
     inception3.load_state_dict(torch.load(encoder))
-    inception3 = nn.Sequential(*list(inception3.children())[:3],
-                               nn.MaxPool2d(kernel_size=3,stride=2),
-                               *list(inception3.children())[3:4])#,
-                               #nn.MaxPool2d(kernel_size=3,stride=2),
-                               #*list(inception3.children())[5:6])
-    inception3_dec = nn.Sequential(*list(inception3_dec.children())[7:])
-    
-    if test:
+    return inception3
+
+def inception3_dec(decoder=None):
+    inception3_dec = net_def.Inception3_dec()
+    if decoder != None:
         inception3_dec.load_state_dict(torch.load(decoder))
-    
-    return inception3, inception3_dec
+    return inception3_dec
 
 class Net(nn.Module):
-    def __init__(self, encoder, decoder, switch):
+    def __init__(self, encoder, decoder):#, switch):
         super(Net, self).__init__()
         enc_layers = list(encoder.children())
+        #dec_layers = list(decoder.children())
+        self.enc_1 = nn.Sequential(*enc_layers[:4])  # input -> relu1_1
+        self.enc_2 = nn.Sequential(*enc_layers[4:11])  # relu1_1 -> relu2_1
+        self.enc_3 = nn.Sequential(*enc_layers[11:18])  # relu2_1 -> relu3_1
+        self.enc_4 = nn.Sequential(*enc_layers[18:31])  # relu3_1 -> relu4_1
+        #self.enc_5 = nn.Sequential(*enc_layers[31:40])  # relu4_1 -> relu5_1
+        #self.enc_6 = nn.Sequential(*enc_layers[40:53])  # relu5_1 -> relu5_4
+        
+        self.num_enc = 4#6   
+            
+        self.decoder = decoder
+ 
+        """
         if switch == 0:
             #VGG
             self.enc_1 = nn.Sequential(*enc_layers[:4])  # input -> relu1_1
@@ -62,62 +66,36 @@ class Net(nn.Module):
             
             self.decoder = decoder
             self.num_enc = 4 
+        elif switch == 1:
+            #resnet
+            self.enc_1 = nn.Sequential(*enc_layers[:3])
+            self.enc_2 = nn.Sequential(enc_layers[3], enc_layers[4][0])
+            self.enc_3 = nn.Sequential(enc_layers[4][1])
+            self.enc_4 = nn.Sequential(enc_layers[5][0])
+            self.enc_5 = nn.Sequential(enc_layers[5][1])
+            self.enc_6 = nn.Sequential(enc_layers[6][0])
+            self.enc_7 = nn.Sequential(enc_layers[6][1])
+            self.enc_8 = nn.Sequential(enc_layers[7])
+            #self.enc_9 = nn.Sequential(*enc_layers[8:9])
+        
+            #dec_layers = list(decoder.children())
+            #dec_layers_c_0 = list(dec_layers[0][0].children())
+            self.decoder = decoder#nn.Sequential(*dec_layers_c_0[2:],*dec_layers[1:])
+            self.num_enc = 8
         else:
-            if switch == 1:
-                #resnet
-                """
-                #enc_layers_c_0=list(enc_layers[4][0].children())
-                #enc_layers_c_1=list(enc_layers[4][1].children()) 
-                #self.enc_1 = nn.Sequential(*enc_layers[:3])
-                #self.enc_2 = nn.Sequential(enc_layers[3],*enc_layers_c_0[:3])
-                #self.enc_3 = nn.Sequential(*enc_layers_c_0[3:],*enc_layers_c_1[:3])
-                #enc_layers_c_0=list(enc_layers[5][0].children())
-                #self.enc_4 = nn.Sequential(*enc_layers_c_1[3:],*enc_layers_c_0[:3])
-                #enc_layers_c_1=list(enc_layers[5][1].children())
-                #self.enc_5 = nn.Sequential(*enc_layers_c_0[3:-1],*enc_layers_c_1[:3])
-                #enc_layers_c_0=list(enc_layers[6][0].children())
-                #self.enc_6 = nn.Sequential(*enc_layers_c_1[3:],*enc_layers_c_0[:3])
-                #enc_layers_c_1=list(enc_layers[6][1].children())
-                #self.enc_7 = nn.Sequential(*enc_layers_c_0[3:-1],*enc_layers_c_1[:3])
-                #enc_layers_c_0=list(enc_layers[7].children())
-                #self.enc_8 = nn.Sequential(*enc_layers_c_1[3:],*enc_layers_c_0[:3])
-                #self.enc_9 = nn.Sequential(*enc_layers_c_0[3:-1],*enc_layers[8:])
-                    
-                #enc_layers_c_2=list(enc_layers[5][1].children())
-                #enc_layers_c_3=list(enc_layers[6][1].children())
-                #self.enc_1 = nn.Sequential(*enc_layers[:3])	
-                #self.enc_2 = nn.Sequential(*enc_layers[3:5], enc_layers[5][0], *enc_layers_c_2[:3])	
-                #self.enc_3 = nn.Sequential(*enc_layers_c_2[3:],enc_layers[6][0],*enc_layers_c_3[:3])
-                #self.enc_4 = nn.Sequential(*enc_layers_c_3[3:],*enc_layers[7:])
-                """
-                self.enc_1 = nn.Sequential(*enc_layers[:3])
-                self.enc_2 = nn.Sequential(enc_layers[3], enc_layers[4][0])
-                self.enc_3 = nn.Sequential(enc_layers[4][1])
-                self.enc_4 = nn.Sequential(enc_layers[5][0])
-                self.enc_5 = nn.Sequential(enc_layers[5][1])
-                self.enc_6 = nn.Sequential(enc_layers[6][0])
-                self.enc_7 = nn.Sequential(enc_layers[6][1])
-                self.enc_8 = nn.Sequential(enc_layers[7])
-                self.enc_9 = nn.Sequential(*enc_layers[8:])
-            
-                #dec_layers = list(decoder.children())
-                #dec_layers_c_0 = list(dec_layers[0][0].children())
-                self.decoder = decoder#nn.Sequential(*dec_layers_c_0[2:],*dec_layers[1:])
-                self.num_enc = 9
-            else:
-                # Inception
-                self.enc_1 = nn.Sequential(enc_layers[0])
-                self.enc_2 = nn.Sequential(enc_layers[1])
-                self.enc_3 = nn.Sequential(enc_layers[2])
-                self.enc_4 = nn.Sequential(*enc_layers[3:5])
-                #self.enc_5 = nn.Sequential(enc_layers[5])
-                #self.enc_6 = nn.Sequential(enc_layers[6:8])
-                #self.enc_7 = nn.Sequential(enc_layers[8])
-                #self.enc_8 = nn.Sequential(enc_layers[10])
-                #self.enc_9 = nn.Sequential(enc_layers[8])
-                #self.enc_10 = nn.Sequential(enc_layers[9])
-                self.num_enc = 4
-                self.decoder = decoder
+            # Inception
+            self.enc_1 = nn.Sequential(enc_layers[0])
+            self.enc_2 = nn.Sequential(enc_layers[1])
+            self.enc_3 = nn.Sequential(enc_layers[2])
+            self.enc_4 = nn.Sequential(*enc_layers[3:5])
+            #self.enc_5 = nn.Sequential(enc_layers[5])
+            #self.enc_6 = nn.Sequential(enc_layers[6:8])
+            #self.enc_7 = nn.Sequential(enc_layers[8])
+            #self.enc_8 = nn.Sequential(enc_layers[10])
+            #self.enc_9 = nn.Sequential(enc_layers[8])
+            #self.enc_10 = nn.Sequential(enc_layers[9])
+            self.num_enc = 4
+            self.decoder = decoder"""
                         
         self.mse_loss = nn.MSELoss()
 

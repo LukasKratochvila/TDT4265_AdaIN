@@ -5,17 +5,12 @@ from tensorboard.backend.event_processing.event_accumulator import EventAccumula
 
 import matplotlib.pyplot as plt
 
-def plot_tensorflow_log(path, save_dir):
+def plot_tensorflow_log(path, save_dir, num_load):
 
     # Loading too much data is slow...
-    #tf_size_guidance = {
-    #    'compressedHistograms': 10,
-    #    'images': 0,
-    #    'scalars': 100,
-    #    'histograms': 1
-    #}
+    tf_size_guidance = {'scalars': num_load}
 
-    event_acc = EventAccumulator(path)#, tf_size_guidance)
+    event_acc = EventAccumulator(path, tf_size_guidance)
     event_acc.Reload()
 
     # Show all tags in the log file
@@ -60,6 +55,7 @@ if __name__ == '__main__':
     parser.add_argument('--log_name', type=str, default=None ,help='Log name')
     parser.add_argument('--save_dir', type=str, default='./plots',
 			help='Dir for save plot, default ./plots')
+    parser.add_argument('--num_load', type=int, default=160000)
     args = parser.parse_args()
     
     if args.log_name == None:
@@ -73,4 +69,4 @@ if __name__ == '__main__':
     if not os.path.exists(args.save_dir):
     	os.mkdir(args.save_dir)
 
-plot_tensorflow_log(log_name, args.save_dir)
+plot_tensorflow_log(log_name, args.save_dir, args.num_load)

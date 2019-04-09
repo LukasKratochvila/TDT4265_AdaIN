@@ -1,7 +1,6 @@
 import argparse
 import os
 import torch
-import torch.nn as nn
 from PIL import Image
 from os.path import basename
 from os.path import splitext
@@ -55,7 +54,8 @@ parser.add_argument('--style', type=str,
 parser.add_argument('--style_dir', type=str,
                     help='Directory path to a batch of style images')
 parser.add_argument('--enc', type=str, default='models/vgg_normalised.pth')
-parser.add_argument('--dec', type=str, default='models/decoder.pth')
+parser.add_argument('--dec', type=str, default='vgg')
+parser.add_argument('--dec_m', type=str, default='models/decoder.pth')
 
 # Additional options
 parser.add_argument('--content_size', type=int, default=512,
@@ -117,24 +117,31 @@ if not os.path.exists(args.output):
 
 # if we don't get the model we use vgg
 if args.enc == 'models/vgg_normalised.pth':
-    # define decoder and encoder
-    encoder, decoder = net.vgg19(args.enc, True, args.dec)
-    switch = 0
+    encoder = net.vgg19(args.enc)
+    #switch = 0
+elif args.enc == 'models/resnet18-5c106cde.pth':
+    encoder = net.resnet18(args.enc)
+    #switch = 1
 else:
-    if args.enc == 'models/resnet18-5c106cde.pth':
-        # define decoder and encoder
-        encoder, decoder = net.resnet18(args.enc, True, decoder=args.dec)
-        switch = 1
-    else:
-        # inception 3
-        encoder, decoder = net.inception3(args.enc, True, decoder=args.dec)
-        switch = 2
+    # inception 3
+    encoder = net.inception3(args.enc)
+    #switch = 2
+        
+if args.dec == 'vgg':
+    decoder = net.vgg19_dec(args.dec_m)
+elif args.dec == 'resnet18':
+    decoder = net.resnet18_dec(args.dec_m)
+else:
+    # inception 3
+    decoder = net.inception3_dec(args.dec_m)
     
-decoder.eval()
-encoder.eval()
+network = net.Net(encoder, decoder)#,switch)
 
-encoder.to(device)
-decoder.to(device)
+network.decoder.eval()
+for i in range(network.num_enc):
+    getattr(network, 'enc_{:d}'.format(i + 1)).eval()
+
+network.to(device)
 
 content_tf = test_transform(args.content_size, args.crop)
 style_tf = test_transform(args.style_size, args.crop)
@@ -147,7 +154,7 @@ for content_path in content_paths:
         style = style.to(device)
         content = content.to(device)
         with torch.no_grad():
-            output = style_transfer(encoder, decoder, content, style,
+            output = style_transfer(network.encode, network.decoder, content, style,
                                     args.alpha, interpolation_weights)
         output = output.cpu()
         output_name = '{:s}/{:s}_interpolation{:s}'.format(
@@ -163,7 +170,7 @@ for content_path in content_paths:
             style = style.to(device).unsqueeze(0)
             content = content.to(device).unsqueeze(0)
             with torch.no_grad():
-                output = style_transfer(encoder, decoder, content, style,
+                output = style_transfer(network.encode, network.decoder, content, style,
                                         args.alpha)
             output = output.cpu()
 

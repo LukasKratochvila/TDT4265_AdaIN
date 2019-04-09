@@ -2,7 +2,6 @@ import argparse
 import os
 import torch
 import torch.backends.cudnn as cudnn
-import torch.nn as nn
 import torch.utils.data as data
 from PIL import Image
 from PIL import ImageFile
@@ -61,6 +60,7 @@ parser.add_argument('--content_dir', type=str, required=True,
 parser.add_argument('--style_dir', type=str, required=True,
                     help='Directory path to a batch of style images')
 parser.add_argument('--enc', type=str, default='models/vgg_normalised.pth')
+parser.add_argument('--dec', type=str, default='vgg')
 
 # training options
 parser.add_argument('--save_dir', default='./experiments',
@@ -89,20 +89,25 @@ writer = SummaryWriter(log_dir=args.log_dir)
 
 # if we don't get the model we use vgg
 if args.enc == 'models/vgg_normalised.pth':
-    # define decoder and encoder
-    encoder, decoder = net.vgg19(args.enc, False)
-    switch = 0
+    encoder = net.vgg19(args.enc)
+    #switch = 0
+elif args.enc == 'models/resnet18-5c106cde.pth':
+    encoder = net.resnet18(args.enc)
+    #switch = 1
 else:
-    if args.enc == 'models/resnet18-5c106cde.pth':
-        # define decoder and encoder
-        encoder, decoder = net.resnet18(args.enc, False)
-        switch = 1
-    else:
-        # inception 3
-        encoder, decoder = net.inception3(args.enc, False)
-        switch = 2
+    # inception 3
+    encoder = net.inception3(args.enc)
+    #switch = 2
+        
+if args.dec == 'vgg':
+    decoder = net.vgg19_dec()
+elif args.dec == 'resnet18':
+    decoder = net.resnet18_dec()
+else:
+    # inception 3
+    decoder = net.inception3_dec()
     
-network = net.Net(encoder, decoder, switch)
+network = net.Net(encoder, decoder)#,switch)
 network.train()
 network.to(device)
 

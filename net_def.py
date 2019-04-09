@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch
 import torchvision
 
 class Inception3(nn.Module):
@@ -104,6 +105,7 @@ class Inception3_dec(nn.Module):
     def __init__(self, num_classes=1000):
         super(Inception3_dec, self).__init__()
         
+        self.trans = nn.Conv2d(512,768,kernel_size=3,padding=1)
         self.Mixed_6b = InceptionC_dec(768, channels_7x7=128)
         self.Mixed_6a = InceptionB_dec(288)
         self.Mixed_5d = InceptionA_dec(288, 288, pool_features=64)
@@ -111,13 +113,13 @@ class Inception3_dec(nn.Module):
         self.Mixed_5b = InceptionA_dec(256, 192, pool_features=32)
         
         #self.up2 = nn.ConvTranspose2d(192, 192, kernel_size=3, stride=2)
-        self.up2 = nn.Upsample(scale_factor=2.02, mode='nearest')       
+        self.up2 = nn.Upsample(scale_factor=2, mode='nearest')       
         
         self.Conv2d_4a_3x3 = BasicConv2d(192, 80, kernel_size=3)
         self.Conv2d_3b_1x1 = BasicConv2d(80, 64, kernel_size=1)
         
         #self.up1 = nn.ConvTranspose2d(64, 64, kernel_size=3, stride=2)
-        self.up1 = nn.Upsample(scale_factor=2.02, mode='nearest')
+        self.up1 = nn.Upsample(scale_factor=1, mode='nearest')
 
         self.Conv2d_2b_3x3 = BasicConv2d(64, 32, kernel_size=3, padding=1)
         self.Conv2d_2a_3x3 = BasicConv2d(32, 32, kernel_size=3)
@@ -132,6 +134,7 @@ class Inception3_dec(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
+        x = self.trans(x)
         # N x 768 x 17 x 17
         x = self.Mixed_6b(x)
         # N x 768 x 17 x 17
@@ -221,7 +224,8 @@ class InceptionB_dec(nn.Module):
         self.branch3x3dbl_2 = BasicConv2d(96, 64, kernel_size=3, padding=1)
         self.branch3x3dbl_1 = BasicConv2d(64, in_channels, kernel_size=1)
         
-        self.branch_pool = nn.ConvTranspose2d(288, in_channels, kernel_size=4, stride=2)
+        self.branch_pool = nn.Sequential(nn.Upsample(scale_factor=2, mode='nearest'),
+                                         nn.Conv2d(288, in_channels, kernel_size=1, bias=False))
 
     def forward(self, x):
         splitted = torch.chunk(x, 8, dim=1)
@@ -309,19 +313,19 @@ class BasicConv2d(nn.Module):
 
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, **kwargs):
         super(BasicConv2d, self).__init__()
-        self.bn = nn.BatchNorm2d(in_channels, eps=0.001)
+        #self.bn = nn.BatchNorm2d(in_channels, eps=0.001)
         if stride != 1:
-            self.conv = nn.Sequential(nn.Upsample(scale_factor=2.03, mode='nearest'), nn.Conv2d(in_channels, out_channels, bias=False, stride=stride-1, kernel_size=kernel_size, padding=padding+1, **kwargs))
+            self.conv = nn.Sequential(nn.Upsample(scale_factor=2, mode='nearest'), nn.Conv2d(in_channels, out_channels, bias=False, stride=stride-1, kernel_size=kernel_size, padding=padding+1, **kwargs))
             #self.conv = nn.ConvTranspose2d(in_channels, out_channels, bias=False, stride=stride, kernel_size=kernel_size, padding=padding, **kwargs)
         else:
             if  padding == 0 and kernel_size > 1:
-                self.conv = nn.Sequential(nn.Upsample(scale_factor=1.01, mode='nearest'), nn.Conv2d(in_channels, out_channels, bias=False, stride=stride, kernel_size=kernel_size, padding=kernel_size//2, **kwargs))
+                self.conv = nn.Sequential(nn.Upsample(scale_factor=1, mode='nearest'), nn.Conv2d(in_channels, out_channels, bias=False, stride=stride, kernel_size=kernel_size, padding=kernel_size//2, **kwargs))
             else:
                 self.conv = nn.Conv2d(in_channels, out_channels, bias=False, stride=stride, kernel_size=kernel_size, padding=padding, **kwargs)
 
     def forward(self, x):
         x = nn.functional.relu(x, inplace=True)
-        x = self.bn(x)
+        #x = self.bn(x)
         x = self.conv(x)
         return x
 
@@ -455,10 +459,10 @@ class ResDec(nn.Module):
         self.layer3 = self._make_layer(block, 256, layers[2], stride=1, norm_layer=norm_layer)
         self.layer2 = self._make_layer(block, 128, layers[1], stride=1, norm_layer=norm_layer)
         self.layer1 = self._make_layer(block, 64, layers[0], stride=1, norm_layer=norm_layer)
-        self.up1 = nn.Upsample(scale_factor=2, mode='nearest')
+        self.up1 = nn.Upsample(scale_factor=1, mode='nearest')
         self.relu = nn.ReLU(inplace=True)
-        self.bn1 = norm_layer(64)
-        self.conv1 = nn.Sequential(nn.Upsample(scale_factor=2, mode='nearest'),
+        #self.bn1 = norm_layer(64)
+        self.conv1 = nn.Sequential(nn.Upsample(scale_factor=1, mode='nearest'),
                                    nn.Conv2d(64, 3, kernel_size=3, stride=1, 
                                         padding=1, bias=False))
 
@@ -476,7 +480,7 @@ class ResDec(nn.Module):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                norm_layer(self.inplanes),
+                #norm_layer(self.inplanes),
                 nn.Upsample(scale_factor=2, mode='nearest'),
                 conv1x1(self.inplanes, planes * block.expansion, stride),                
                 #nn.ConvTranspose2d(self.inplanes, planes * block.expansion, kernel_size=4, stride=2, 
@@ -499,7 +503,7 @@ class ResDec(nn.Module):
 
         x = self.up1(x)
         x = self.relu(x)
-        x = self.bn1(x)
+        #x = self.bn1(x)
         x = self.conv1(x)
 
         return x
@@ -512,10 +516,10 @@ class BasicBlock_dec(nn.Module):
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
     # Both self.conv1 and self.downsample layers downsample the input when stride != 1
-        self.bn2 = norm_layer(inplanes)
+        #self.bn2 = norm_layer(inplanes)
         self.conv2 = conv3x3_dec(inplanes, planes)
         self.relu = nn.ReLU(inplace=True)
-        self.bn1 = norm_layer(planes)        
+        #self.bn1 = norm_layer(planes)        
         self.conv1 = conv3x3_dec(planes, planes, stride)
         self.downsample = downsample
 
@@ -524,11 +528,11 @@ class BasicBlock_dec(nn.Module):
     def forward(self, x):
         identity = x
 
-        out = self.bn2(x)
-        out = self.conv2(out)
+        #out = self.bn2(x)
+        out = self.conv2(x)
 
         out = self.relu(out)
-        out = self.bn1(out)
+        #out = self.bn1(out)
         out = self.conv1(out)
       
         if self.downsample is not None:

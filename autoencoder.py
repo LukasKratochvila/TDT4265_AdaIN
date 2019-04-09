@@ -40,10 +40,11 @@ class FlatFolderDataset(data.Dataset):
         return 'FlatFolderDataset'
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data_dir', type=str, required=True,
+parser.add_argument('--data_dir', type=str, default='./input/content/',
                     help='Directory path to a batch of content images')
 parser.add_argument('--enc', type=str, default='models/vgg_normalised.pth')
-parser.add_argument('--dec', type=str, default='models/decoder.pth')
+parser.add_argument('--dec', type=str, default='vgg')
+parser.add_argument('--dec_m', type=str, default='models/decoder.pth')
 # Training
 parser.add_argument('--log_dir', default='./logs',
                     help='Directory to save the log')
@@ -56,6 +57,7 @@ parser.add_argument('--n_threads', type=int, default=16)
 
 # Testing
 parser.add_argument('--test', action='store_true')
+parser.add_argument('--test_img', type=str, default='input/content/blonde_girl.jpg')
 parser.add_argument('--output', type=str, default='output',
                     help='Directory to save the output image(s)')
 parser.add_argument('--save_ext', default='.jpg',
@@ -64,63 +66,76 @@ args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-if args.test: 
-    batch = 1
-    dataset = FlatFolderDataset(args.data_dir, transforms.ToTensor())
-else:
-    batch = args.batch_size
-    dataset = FlatFolderDataset(args.data_dir, train_transform())
-    
-dataset_iter = iter(data.DataLoader(
-    dataset, batch_size=batch,
-    sampler=InfiniteSamplerWrapper(dataset),
-    num_workers=args.n_threads))
-
 # if we don't get the model we use vgg
 if args.enc == 'models/vgg_normalised.pth':
-    # define decoder and encoder
-    encoder, decoder = net.vgg19(args.enc, args.test, args.dec)
+    encoder = net.vgg19(args.enc)
+    #switch = 0
+elif args.enc == 'models/resnet18-5c106cde.pth':
+    encoder = net.resnet18(args.enc)
+    #switch = 1
 else:
-    if args.enc == 'models/resnet18-5c106cde.pth':
-        # define decoder and encoder
-        encoder, decoder = net.resnet18(args.enc, args.test, decoder=args.dec)
-    else:
-        # inception 3
-        encoder, decoder = net.inception3(args.enc, args.test, decoder=args.dec)
+    # inception 3
+    encoder = net.inception3(args.enc)
+    #switch = 2
+if args.test:
+    dec_m = args.dec_m
+else:
+    dec_m = None
+    
+if args.dec == 'vgg':
+    decoder = net.vgg19_dec(dec_m)
+elif args.dec == 'resnet18':
+    decoder = net.resnet18_dec(dec_m)
+else:
+    # inception 3
+    decoder = net.inception3_dec(dec_m)
+    
+network = net.Net(encoder, decoder)#,switch)
 
 if args.test:
+    image = transforms.ToTensor()(Image.open(args.test_img))
+    image = image.unsqueeze(0).expand_as(torch.rand([1,image.shape[0],image.shape[1],image.shape[2]]))
     if not os.path.exists(args.output):
         os.mkdir(args.output)
 
-    decoder.eval()
-    encoder.eval()
+    network.decoder.eval()
     
-    encoder.to(device)
-    decoder.to(device)
-    
-    images = next(dataset_iter).to(device)
+    for i in range(network.num_enc):
+        getattr(network, 'enc_{:d}'.format(i + 1)).eval()
+        getattr(network, 'enc_{:d}'.format(i + 1)).to(device)
+    network.decoder.to(device)
+    image = image.to(device)
+        
     with torch.no_grad():
-        output = decoder(encoder(images))
+        output = network.decoder(network.encode(image))
         output = output.cpu()
 
     output_name = '{:s}/autoencoder_test{:s}'.format(args.output, args.save_ext)
     save_image(output, output_name)
 
 else:
+    dataset = FlatFolderDataset(args.data_dir, train_transform())
+    dataset_iter = iter(data.DataLoader(
+            dataset, batch_size=args.batch_size,
+            sampler=InfiniteSamplerWrapper(dataset),
+            num_workers=args.n_threads))
+    
     if not os.path.exists(args.save_dir):
         os.mkdir(args.save_dir)
     if not os.path.exists(args.log_dir):
         os.mkdir(args.log_dir)
     writer = SummaryWriter(log_dir=args.log_dir)
     
-    encoder.to(device)
-    decoder.to(device)
+    network.decoder.train()
+    for i in range(network.num_enc):
+        getattr(network, 'enc_{:d}'.format(i + 1)).to(device)
+    network.decoder.to(device)
     
-    optimizer = torch.optim.Adam(decoder.parameters(), lr=args.lr)
+    optimizer = torch.optim.Adam(network.decoder.parameters(), lr=args.lr)
 
     for i in tqdm(range(args.max_iter)):
         images = next(dataset_iter).to(device)
-        output = decoder(encoder(images))
+        output = network.decoder(network.encode(images))
         loss = torch.dist(output,images)
         
         optimizer.zero_grad()
@@ -128,7 +143,7 @@ else:
         optimizer.step()
     
         writer.add_scalar('loss', loss.item(), i + 1)
-    state_dict = decoder.state_dict()
+    state_dict = network.decoder.state_dict()
     for key in state_dict.keys():
         state_dict[key] = state_dict[key].to(torch.device('cpu'))
         torch.save(state_dict,
