@@ -55,7 +55,7 @@ parser.add_argument('--batch_size', type=int, default=8)
 parser.add_argument('--n_threads', type=int, default=16)
 
 # Testing
-parser.add_argument('--test', type=bool, default=False)
+parser.add_argument('--test', action='store_true')
 parser.add_argument('--output', type=str, default='output',
                     help='Directory to save the output image(s)')
 parser.add_argument('--save_ext', default='.jpg',
@@ -64,12 +64,12 @@ args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-dataset = FlatFolderDataset(args.data_dir, train_transform())
-
 if args.test: 
     batch = 1
+    dataset = FlatFolderDataset(args.data_dir, transforms.ToTensor())
 else:
     batch = args.batch_size
+    dataset = FlatFolderDataset(args.data_dir, train_transform())
     
 dataset_iter = iter(data.DataLoader(
     dataset, batch_size=batch,

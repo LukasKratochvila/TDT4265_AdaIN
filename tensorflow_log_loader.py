@@ -5,7 +5,7 @@ from tensorboard.backend.event_processing.event_accumulator import EventAccumula
 
 import matplotlib.pyplot as plt
 
-def plot_tensorflow_log(path, save_dir, auto_loss):
+def plot_tensorflow_log(path, save_dir):
 
     # Loading too much data is slow...
     #tf_size_guidance = {
@@ -20,7 +20,7 @@ def plot_tensorflow_log(path, save_dir, auto_loss):
 
     # Show all tags in the log file
     #print(event_acc.Tags())
-    if auto_loss:
+    if event_acc.Tags()["scalars"][0] == "loss":
         loss = event_acc.Scalars('loss')
         
         steps = len(loss)
@@ -56,15 +56,21 @@ def plot_tensorflow_log(path, save_dir, auto_loss):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--log_name', type=str, required=True,
-			help='Log name')
-    parser.add_argument('--save_dir', type=str, default="./plots",
+    parser.add_argument('--log_dir', type=str, default='./logs' , help='Log dir')
+    parser.add_argument('--log_name', type=str, default=None ,help='Log name')
+    parser.add_argument('--save_dir', type=str, default='./plots',
 			help='Dir for save plot, default ./plots')
-    parser.add_argument('--auto_loss', type=bool, default=False)
-    log_file = parser.parse_args().log_name
-    save_dir = parser.parse_args().save_dir
-    auto_loss = parser.parse_args().auto_loss
-    if not os.path.exists(save_dir):
-    	os.mkdir(save_dir)
-    #print(log_file)
-plot_tensorflow_log(log_file, save_dir,auto_loss)
+    args = parser.parse_args()
+    
+    if args.log_name == None:
+        logs = [os.path.join(args.log_dir, f) for f in os.listdir(args.log_dir)]
+        timestamps = [os.path.getmtime(log) for log in logs]
+        recent_idx = np.argmax(timestamps)
+        log_name = logs[recent_idx]
+    else:
+        log_name = parser.parse_args().log_name
+
+    if not os.path.exists(args.save_dir):
+    	os.mkdir(args.save_dir)
+
+plot_tensorflow_log(log_name, args.save_dir)
