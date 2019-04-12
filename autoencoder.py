@@ -77,6 +77,7 @@ else:
     # inception 3
     encoder = net.inception3(args.enc)
     #switch = 2
+    
 if args.test:
     dec_m = args.dec_m
 else:
@@ -93,7 +94,7 @@ else:
 network = net.Net(encoder, decoder)#,switch)
 
 if args.test:
-    image = transforms.ToTensor()(Image.open(args.test_img))
+    image = transforms.ToTensor()(Image.open(args.test_img).convert('RGB'))
     image = image.unsqueeze(0).expand_as(torch.rand([1,image.shape[0],image.shape[1],image.shape[2]]))
     if not os.path.exists(args.output):
         os.mkdir(args.output)

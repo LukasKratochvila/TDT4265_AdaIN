@@ -680,6 +680,28 @@ Resnet = nn.Sequential(
 # Default
 
 Vgg19_dec = nn.Sequential(
+    #nn.ReflectionPad2d((1, 1, 1, 1)),
+    #nn.Conv2d(512, 512, (3, 3)),
+    #nn.ReLU(),  # relu4-2
+    #nn.ReflectionPad2d((1, 1, 1, 1)),
+    #nn.Conv2d(512, 512, (3, 3)),
+    #nn.ReLU(),  # relu4-3
+    #nn.ReflectionPad2d((1, 1, 1, 1)),
+    #nn.Conv2d(512, 512, (3, 3)),
+    #nn.ReLU(),  # relu4-4
+    #nn.Upsample(scale_factor=2, mode='nearest'),
+    #nn.ReflectionPad2d((1, 1, 1, 1)),
+    #nn.Conv2d(512, 512, (3, 3)),
+    #nn.ReLU(),  # relu5-1
+    #nn.ReflectionPad2d((1, 1, 1, 1)),
+    #nn.Conv2d(512, 512, (3, 3)),
+    #nn.ReLU(),  # relu5-2
+    #nn.ReflectionPad2d((1, 1, 1, 1)),
+    #nn.Conv2d(512, 512, (3, 3)),
+    #nn.ReLU(),  # relu5-3
+    #nn.ReflectionPad2d((1, 1, 1, 1)),
+    #nn.Conv2d(512, 512, (3, 3)),
+    #nn.ReLU(),  # relu5-4
     nn.ReflectionPad2d((1, 1, 1, 1)),
     nn.Conv2d(512, 256, (3, 3)),
     nn.ReLU(),

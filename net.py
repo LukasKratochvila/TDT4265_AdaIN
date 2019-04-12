@@ -11,30 +11,34 @@ def vgg19(encoder):
     vgg19.load_state_dict(torch.load(encoder))
     return vgg19
 
-def vgg19_dec(decoder=None):
+def vgg19_dec(decoder=None):#, switch):
     vgg19_dec = net_def.Vgg19_dec
     if decoder != None:
+        #if switch == 1:
+        #    dec_layers = list(vgg19_dec.children())
+        #    vgg19_dec=nn.Sequential(nn.Upsample(scale_factor=2),*dec_layers[-14:])
         vgg19_dec.load_state_dict(torch.load(decoder))
+            
     return vgg19_dec
 
-def resnet18(encoder, test, decoder=None):
+def resnet18(encoder):
     resnet18 = net_def.ResNet(net_def.BasicBlock,[2,2,2,2])#,norm_layer=net_def.Identity)
     resnet18.load_state_dict(torch.load(encoder))
 
     return resnet18
 
-def resnet18_dec(decoder=None):
+def resnet18_dec(decoder=None):#, switch):
     resnet18_dec = net_def.ResDec(net_def.BasicBlock_dec,[2,2,2,2])#,norm_layer=net_def.Identity)
     if decoder != None:
         resnet18_dec.load_state_dict(torch.load(decoder))
     return resnet18_dec
 
-def inception3(encoder, test, decoder=None):    
+def inception3(encoder):    
     inception3 = net_def.Inception3()
     inception3.load_state_dict(torch.load(encoder))
     return inception3
 
-def inception3_dec(decoder=None):
+def inception3_dec(decoder=None):#, switch):
     inception3_dec = net_def.Inception3_dec()
     if decoder != None:
         inception3_dec.load_state_dict(torch.load(decoder))
@@ -45,6 +49,7 @@ class Net(nn.Module):
         super(Net, self).__init__()
         enc_layers = list(encoder.children())
         #dec_layers = list(decoder.children())
+        
         self.enc_1 = nn.Sequential(*enc_layers[:4])  # input -> relu1_1
         self.enc_2 = nn.Sequential(*enc_layers[4:11])  # relu1_1 -> relu2_1
         self.enc_3 = nn.Sequential(*enc_layers[11:18])  # relu2_1 -> relu3_1
@@ -55,7 +60,6 @@ class Net(nn.Module):
         self.num_enc = 4#6   
             
         self.decoder = decoder
- 
         """
         if switch == 0:
             #VGG
@@ -63,13 +67,15 @@ class Net(nn.Module):
             self.enc_2 = nn.Sequential(*enc_layers[4:11])  # relu1_1 -> relu2_1
             self.enc_3 = nn.Sequential(*enc_layers[11:18])  # relu2_1 -> relu3_1
             self.enc_4 = nn.Sequential(*enc_layers[18:31])  # relu3_1 -> relu4_1
+            #self.enc_5 = nn.Sequential(*enc_layers[31:40])  # relu4_1 -> relu5_1
+            #self.enc_6 = nn.Sequential(*enc_layers[40:53])  # relu5_1 -> relu5_4
             
             self.decoder = decoder
             self.num_enc = 4 
         elif switch == 1:
             #resnet
             self.enc_1 = nn.Sequential(*enc_layers[:3])
-            self.enc_2 = nn.Sequential(enc_layers[3], enc_layers[4][0])
+            self.enc_2 = nn.Sequential(enc_layers[3],enc_layers[4][0])
             self.enc_3 = nn.Sequential(enc_layers[4][1])
             self.enc_4 = nn.Sequential(enc_layers[5][0])
             self.enc_5 = nn.Sequential(enc_layers[5][1])
@@ -80,23 +86,23 @@ class Net(nn.Module):
         
             #dec_layers = list(decoder.children())
             #dec_layers_c_0 = list(dec_layers[0][0].children())
-            self.decoder = decoder#nn.Sequential(*dec_layers_c_0[2:],*dec_layers[1:])
+            self.decoder = decoder#nn.Sequential(nn.Upsample(scale_factor=2),*dec_layers[-14:])#decoder#nn.Sequential(*dec_layers_c_0[2:],*dec_layers[1:])
             self.num_enc = 8
         else:
             # Inception
             self.enc_1 = nn.Sequential(enc_layers[0])
-            self.enc_2 = nn.Sequential(enc_layers[1])
-            self.enc_3 = nn.Sequential(enc_layers[2])
-            self.enc_4 = nn.Sequential(*enc_layers[3:5])
+            #self.enc_2 = nn.Sequential(enc_layers[1])
+            #self.enc_3 = nn.Sequential(enc_layers[2])
+            #self.enc_4 = nn.Sequential(enc_layers[3])
             #self.enc_5 = nn.Sequential(enc_layers[5])
             #self.enc_6 = nn.Sequential(enc_layers[6:8])
             #self.enc_7 = nn.Sequential(enc_layers[8])
             #self.enc_8 = nn.Sequential(enc_layers[10])
             #self.enc_9 = nn.Sequential(enc_layers[8])
             #self.enc_10 = nn.Sequential(enc_layers[9])
-            self.num_enc = 4
-            self.decoder = decoder"""
-                        
+            self.num_enc = 1
+            self.decoder = nn.Sequential(*dec_layers[-1:])
+        """                
         self.mse_loss = nn.MSELoss()
 
         # fix the encoder

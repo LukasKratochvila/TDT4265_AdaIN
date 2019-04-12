@@ -128,12 +128,12 @@ else:
     #switch = 2
         
 if args.dec == 'vgg':
-    decoder = net.vgg19_dec(args.dec_m)
+    decoder = net.vgg19_dec(args.dec_m)#,switch)
 elif args.dec == 'resnet18':
-    decoder = net.resnet18_dec(args.dec_m)
+    decoder = net.resnet18_dec(args.dec_m)#,switch)
 else:
     # inception 3
-    decoder = net.inception3_dec(args.dec_m)
+    decoder = net.inception3_dec(args.dec_m)#,switch)
     
 network = net.Net(encoder, decoder)#,switch)
 
@@ -163,8 +163,8 @@ for content_path in content_paths:
 
     else:  # process one content and one style
         for style_path in style_paths:
-            content = content_tf(Image.open(content_path))
-            style = style_tf(Image.open(style_path))
+            content = content_tf(Image.open(content_path).convert('RGB'))
+            style = style_tf(Image.open(style_path).convert('RGB'))
             if args.preserve_color:
                 style = coral(style, content)
             style = style.to(device).unsqueeze(0)
