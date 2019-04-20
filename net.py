@@ -2,6 +2,8 @@ import torch.nn as nn
 import torch
 
 import net_def
+import ResNet
+import VGG19
 
 from function import adaptive_instance_normalization as adain
 from function import calc_mean_std
@@ -21,6 +23,12 @@ def vgg19_dec(decoder=None):#, switch):
             
     return vgg19_dec
 
+def vgg19B_dec(decoder=None):
+    vgg19B_dec = VGG19.vgg19_dec
+    if decoder != None:
+        vgg19B_dec.load_state_dict(torch.load(decoder))
+    return vgg19B_dec
+
 def resnet18(encoder):
     resnet18 = net_def.ResNet(net_def.BasicBlock,[2,2,2,2])#,norm_layer=net_def.Identity)
     resnet18.load_state_dict(torch.load(encoder))
@@ -32,6 +40,12 @@ def resnet18_dec(decoder=None):#, switch):
     if decoder != None:
         resnet18_dec.load_state_dict(torch.load(decoder))
     return resnet18_dec
+
+def resnet18B_dec(decoder=None):
+    resnet18B_dec = ResNet.resnet18_dec()
+    if decoder != None:
+        resnet18B_dec.load_state_dict(torch.load(decoder))
+    return resnet18B_dec
 
 def inception3(encoder):    
     inception3 = net_def.Inception3()

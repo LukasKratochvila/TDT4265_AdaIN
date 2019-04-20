@@ -103,6 +103,10 @@ if args.dec == 'vgg':
     decoder = net.vgg19_dec()
 elif args.dec == 'resnet18':
     decoder = net.resnet18_dec()
+elif args.dec == 'VGG19B':
+    decoder = net.vgg19B_dec()
+elif args.dec == 'resnet18B':
+    decoder = net.resnet18B_dec()
 else:
     # inception 3
     decoder = net.inception3_dec()
