@@ -79,6 +79,7 @@ parser.add_argument('--style_weight', type=float, default=10.0)
 parser.add_argument('--content_weight', type=float, default=1.0)
 parser.add_argument('--n_threads', type=int, default=16)
 parser.add_argument('--save_model_interval', type=int, default=10000)
+parser.add_argument('--verbose', action='store_true')
 
 args = parser.parse_args()
 
@@ -109,6 +110,7 @@ else:
     assert False,"Wrong decoder"
     
 network = net.Net(encoder, decoder)
+network.print_networks(args.verbose)
 network.train()
 network.to(device)
 

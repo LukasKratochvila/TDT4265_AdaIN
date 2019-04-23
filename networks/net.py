@@ -20,6 +20,10 @@ class Net(nn.Module):
         self.decoder = decoder
 
         self.mse_loss = nn.MSELoss()
+        
+        # Name for printing
+        self.model_names = ['enc_{:d}'.format(i + 1) for i in range(self.num_enc)]
+        self.model_names.append('decoder')
 
         # fix the encoder
         for i in range(self.num_enc):
@@ -68,3 +72,21 @@ class Net(nn.Module):
         for i in range(1, len(style_feats)):
             loss_s += self.calc_style_loss(g_t_feats[i], style_feats[i])
         return loss_c, loss_s
+    
+    def print_networks(self, verbose):
+        """Print the total number of parameters in the network and (if verbose) network architecture
+
+        Parameters:
+            verbose (bool) -- if verbose: print the network architecture
+        """
+        print('---------- Networks initialized -------------')
+        for name in self.model_names:
+            if isinstance(name, str):
+                net = getattr(self, name)
+                num_params = 0
+                for param in net.parameters():
+                    num_params += param.numel()
+                if verbose:
+                    print(net)
+                print('[Network %s] Total number of parameters : %.3f M' % (name, num_params / 1e6))
+        print('-----------------------------------------------')

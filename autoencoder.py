@@ -66,6 +66,8 @@ parser.add_argument('--output', type=str, default='output',
                     help='Directory to save the output image(s)')
 parser.add_argument('--save_ext', default='.jpg',
                     help='The extension name of the output image')
+parser.add_argument('--verbose', action='store_true')
+
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -111,6 +113,7 @@ if args.test:
     save_image(output, output_name)
 
 else:
+    network.print_networks(args.verbose)
     dataset = FlatFolderDataset(args.data_dir, train_transform())
     dataset_iter = iter(data.DataLoader(
             dataset, batch_size=args.batch_size,
