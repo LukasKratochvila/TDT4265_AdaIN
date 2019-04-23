@@ -128,6 +128,10 @@ class BaseOptions():
         opt.isTrain = self.isTrain   # train or test
         if opt.isTrain:
             opt.expr_dir = os.path.join(opt.save_dir, opt.name)
+            if not os.path.exists(opt.save_dir):
+                os.mkdir(opt.save_dir)                
+            if not os.path.exists(opt.log_dir):
+                os.mkdir(opt.log_dir)
         
         # Either --content or --contentDir should be given.
         assert (opt.content or opt.content_dir)

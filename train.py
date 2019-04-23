@@ -60,11 +60,6 @@ args = TrainOptions().parse()
 
 device = torch.device('cuda')
 
-if not os.path.exists(args.save_dir):
-    os.mkdir(args.save_dir)
-
-if not os.path.exists(args.log_dir):
-    os.mkdir(args.log_dir)
 writer = SummaryWriter(log_dir=args.log_dir)
 
 # if we don't get the model we use vgg
