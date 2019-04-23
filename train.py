@@ -60,7 +60,7 @@ args = TrainOptions().parse()
 
 device = torch.device('cuda')
 
-writer = SummaryWriter(log_dir=args.log_dir)
+writer = SummaryWriter(log_dir=args.expr_dir)
 
 # if we don't get the model we use vgg
 if args.enc_w == 'weights/vgg_normalised.pth':

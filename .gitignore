@@ -9,3 +9,4 @@ __pycache__
 pytorch04
 *.t7
 *14.pth
+*.log

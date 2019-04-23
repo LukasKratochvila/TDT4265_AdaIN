@@ -12,8 +12,8 @@ class TrainOptions(BaseOptions):
         # training options
         parser.add_argument('--save_dir', default='./experiments',
                             help='Directory to save the model')
-        parser.add_argument('--log_dir', default='./logs',
-                            help='Directory to save the log')
+        #parser.add_argument('--log_dir', default='./logs',
+        #                    help='Directory to save the log')
         parser.add_argument('--lr', type=float, default=1e-4,
                             help='Learning rate')
         parser.add_argument('--lr_decay', type=float, default=5e-5,
