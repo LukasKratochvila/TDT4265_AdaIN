@@ -63,7 +63,7 @@ parser.add_argument('--content_dir', type=str, required=True,
                     help='Directory path to a batch of content images')
 parser.add_argument('--style_dir', type=str, required=True,
                     help='Directory path to a batch of style images')
-parser.add_argument('--enc', type=str, default='models/vgg_normalised.pth')
+parser.add_argument('--enc', type=str, default='weights/vgg_normalised.pth')
 parser.add_argument('--dec', type=str, default='VGG19')
 
 # training options
@@ -92,7 +92,7 @@ if not os.path.exists(args.log_dir):
 writer = SummaryWriter(log_dir=args.log_dir)
 
 # if we don't get the model we use vgg
-if args.enc == 'models/vgg_normalised.pth':
+if args.enc == 'weights/vgg_normalised.pth':
     encoder = VGG19.vgg19(args.enc)
 else:
     assert False,"Wrong encoder"

@@ -46,9 +46,9 @@ class FlatFolderDataset(data.Dataset):
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_dir', type=str, default='./input/content/',
                     help='Directory path to a batch of content images')
-parser.add_argument('--enc', type=str, default='models/vgg_normalised.pth')
+parser.add_argument('--enc', type=str, default='weights/vgg_normalised.pth')
 parser.add_argument('--dec', type=str, default='vgg')
-parser.add_argument('--dec_m', type=str, default='models/decoder.pth')
+parser.add_argument('--dec_m', type=str, default='weights/decoder.pth')
 # Training
 parser.add_argument('--log_dir', default='./logs',
                     help='Directory to save the log')
@@ -71,7 +71,7 @@ args = parser.parse_args()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # if we don't get the model we use vgg
-if args.enc == 'models/vgg_normalised.pth':
+if args.enc == 'weights/vgg_normalised.pth':
     encoder = VGG19.vgg19(args.enc)
 else:
     assert False,"Wrong encoder"

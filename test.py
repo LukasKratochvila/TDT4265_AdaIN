@@ -57,9 +57,9 @@ parser.add_argument('--style', type=str,
                     interpolation or spatial control')
 parser.add_argument('--style_dir', type=str,
                     help='Directory path to a batch of style images')
-parser.add_argument('--enc', type=str, default='models/vgg_normalised.pth')
+parser.add_argument('--enc', type=str, default='weights/vgg_normalised.pth')
 parser.add_argument('--dec', type=str, default='VGG19')
-parser.add_argument('--dec_m', type=str, default='models/decoder.pth')
+parser.add_argument('--dec_m', type=str, default='weights/decoder.pth')
 
 # Additional options
 parser.add_argument('--content_size', type=int, default=512,
@@ -120,7 +120,7 @@ if not os.path.exists(args.output):
     os.mkdir(args.output)
 
 # if we don't get the model we use vgg
-if args.enc == 'models/vgg_normalised.pth':
+if args.enc == 'weights/vgg_normalised.pth':
     encoder = VGG19.vgg19(args.enc)
 else:
     assert False,"Wrong encoder"
