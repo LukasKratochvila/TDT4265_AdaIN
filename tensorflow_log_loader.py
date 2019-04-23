@@ -12,6 +12,9 @@ def plot_tensorflow_log(path, save_dir, num_load):
 
     event_acc = EventAccumulator(path, tf_size_guidance)
     event_acc.Reload()
+    
+    fig1 = plt.figure()
+    ax1 = fig1.add_subplot(1, 1, 1)
 
     # Show all tags in the log file
     #print(event_acc.Tags())
@@ -24,7 +27,7 @@ def plot_tensorflow_log(path, save_dir, num_load):
         for i in range(steps):
             x[i] = loss[i][1] #step
             y[i] = loss[i][2] # value
-        plt.plot(x, y[:], label='loss_auto')
+        ax1.plot(x, y[:], label='loss_auto')
     else:
         loss_content = event_acc.Scalars('loss_content')
         loss_style = event_acc.Scalars('loss_style')
@@ -38,14 +41,15 @@ def plot_tensorflow_log(path, save_dir, num_load):
             y[i, 0] = loss_content[i][2] # value
             y[i, 1] = loss_style[i][2]
 
-        plt.plot(x, y[:,0], label='loss_content')
-        plt.plot(x, y[:,1], label='loss_style')
+        ax1.plot(x, y[:,0], label='loss_content')
+        ax1.plot(x, y[:,1], label='loss_style')
 
-    plt.xlabel("Iter")
-    plt.ylabel("loss")
-    plt.title("Training Progress")
-    plt.legend(loc='upper right', frameon=True)
-    #plt.savefig('{:s}/losses_{:s}.eps'.format(save_dir, path[-17:]))
+    ax1.set_xlabel("Iter")
+    ax1.set_ylabel("loss")
+    ax1.set_title("Training Progress")
+    ax1.legend(loc='upper right', frameon=True)
+    ax1.set_yscale("log")
+    #ax1.savefig('{:s}/losses_{:s}.eps'.format(save_dir, path[-17:]))
     plt.show()
 
 
