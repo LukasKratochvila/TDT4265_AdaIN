@@ -7,7 +7,11 @@ from os.path import splitext
 from torchvision import transforms
 from torchvision.utils import save_image
 
-import net
+from networks import net
+from networks import VGG19
+from networks import ResNet
+from networks import InceptionV3
+
 from function import adaptive_instance_normalization
 from function import coral
 
@@ -54,7 +58,7 @@ parser.add_argument('--style', type=str,
 parser.add_argument('--style_dir', type=str,
                     help='Directory path to a batch of style images')
 parser.add_argument('--enc', type=str, default='models/vgg_normalised.pth')
-parser.add_argument('--dec', type=str, default='vgg')
+parser.add_argument('--dec', type=str, default='VGG19')
 parser.add_argument('--dec_m', type=str, default='models/decoder.pth')
 
 # Additional options
@@ -117,29 +121,22 @@ if not os.path.exists(args.output):
 
 # if we don't get the model we use vgg
 if args.enc == 'models/vgg_normalised.pth':
-    encoder = net.vgg19(args.enc)
-    #switch = 0
-elif args.enc == 'models/resnet18-5c106cde.pth':
-    encoder = net.resnet18(args.enc)
-    #switch = 1
+    encoder = VGG19.vgg19(args.enc)
 else:
-    # inception 3
-    encoder = net.inception3(args.enc)
-    #switch = 2
+    assert False,"Wrong encoder"
         
-if args.dec == 'vgg':
-    decoder = net.vgg19_dec(args.dec_m)#,switch)
-elif args.dec == 'resnet18':
-    decoder = net.resnet18_dec(args.dec_m)#,switch)
+if args.dec == 'VGG19':
+    decoder = VGG19.vgg19_dec(args.dec_m)
 elif args.dec == 'VGG19B':
-    decoder = net.vgg19B_dec(args.dec_m)#,switch)
-elif args.dec == 'resnet18B':
-    decoder = net.resnet18B_dec(args.dec_m)#,switch)
+    decoder = VGG19.vgg19B_dec(args.dec_m)
+elif args.dec == 'resnet18':
+    decoder = ResNet.resnet18_dec(args.dec_m)
+elif args.dec == 'inceptionv3':
+    decoder = InceptionV3.inception3_dec(args.dec_m)
 else:
-    # inception 3
-    decoder = net.inception3_dec(args.dec_m)#,switch)
+    assert False,"Wrong decoder"
     
-network = net.Net(encoder, decoder)#,switch)
+network = net.Net(encoder, decoder)
 
 network.decoder.eval()
 for i in range(network.num_enc):

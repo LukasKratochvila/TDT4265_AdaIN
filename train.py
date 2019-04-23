@@ -9,7 +9,11 @@ from tensorboardX import SummaryWriter
 from torchvision import transforms
 from tqdm import tqdm
 
-import net
+from networks import net
+from networks import VGG19
+from networks import ResNet
+from networks import InceptionV3
+
 from sampler import InfiniteSamplerWrapper
 
 cudnn.benchmark = True
@@ -60,7 +64,7 @@ parser.add_argument('--content_dir', type=str, required=True,
 parser.add_argument('--style_dir', type=str, required=True,
                     help='Directory path to a batch of style images')
 parser.add_argument('--enc', type=str, default='models/vgg_normalised.pth')
-parser.add_argument('--dec', type=str, default='vgg')
+parser.add_argument('--dec', type=str, default='VGG19')
 
 # training options
 parser.add_argument('--save_dir', default='./experiments',
@@ -89,29 +93,22 @@ writer = SummaryWriter(log_dir=args.log_dir)
 
 # if we don't get the model we use vgg
 if args.enc == 'models/vgg_normalised.pth':
-    encoder = net.vgg19(args.enc)
-    #switch = 0
-elif args.enc == 'models/resnet18-5c106cde.pth':
-    encoder = net.resnet18(args.enc)
-    #switch = 1
+    encoder = VGG19.vgg19(args.enc)
 else:
-    # inception 3
-    encoder = net.inception3(args.enc)
-    #switch = 2
+    assert False,"Wrong encoder"
         
-if args.dec == 'vgg':
-    decoder = net.vgg19_dec()
-elif args.dec == 'resnet18':
-    decoder = net.resnet18_dec()
+if args.dec == 'VGG19':
+    decoder = VGG19.vgg19_dec()
 elif args.dec == 'VGG19B':
-    decoder = net.vgg19B_dec()
-elif args.dec == 'resnet18B':
-    decoder = net.resnet18B_dec()
+    decoder = VGG19.vgg19B_dec()
+elif args.dec == 'resnet18':
+    decoder = ResNet.resnet18_dec()
+elif args.dec == 'inceptionv3':
+    decoder = InceptionV3.inception3_dec()
 else:
-    # inception 3
-    decoder = net.inception3_dec()
+    assert False,"Wrong decoder"
     
-network = net.Net(encoder, decoder)#,switch)
+network = net.Net(encoder, decoder)
 network.train()
 network.to(device)
 
@@ -149,7 +146,7 @@ for i in tqdm(range(args.max_iter)):
     writer.add_scalar('loss_style', loss_s.item(), i + 1)
 
     if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
-        state_dict = decoder.state_dict()
+        state_dict = network.decoder.state_dict()
         for key in state_dict.keys():
             state_dict[key] = state_dict[key].to(torch.device('cpu'))
         torch.save(state_dict,

@@ -9,7 +9,11 @@ from torchvision import transforms
 from torchvision.utils import save_image
 import torch.utils.data as data
 
-import net
+from networks import net
+from networks import VGG19
+from networks import ResNet
+from networks import InceptionV3
+
 from sampler import InfiniteSamplerWrapper
 
 def train_transform():
@@ -68,30 +72,22 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # if we don't get the model we use vgg
 if args.enc == 'models/vgg_normalised.pth':
-    encoder = net.vgg19(args.enc)
-    #switch = 0
-elif args.enc == 'models/resnet18-5c106cde.pth':
-    encoder = net.resnet18(args.enc)
-    #switch = 1
+    encoder = VGG19.vgg19(args.enc)
 else:
-    # inception 3
-    encoder = net.inception3(args.enc)
-    #switch = 2
-    
-if args.test:
-    dec_m = args.dec_m
-else:
-    dec_m = None
-    
-if args.dec == 'vgg':
-    decoder = net.vgg19_dec(dec_m)
+    assert False,"Wrong encoder"
+        
+if args.dec == 'VGG19':
+    decoder = VGG19.vgg19_dec(args.dec_m)
+elif args.dec == 'VGG19B':
+    decoder = VGG19.vgg19B_dec(args.dec_m)
 elif args.dec == 'resnet18':
-    decoder = net.resnet18_dec(dec_m)
+    decoder = ResNet.resnet18_dec(args.dec_m)
+elif args.dec == 'inceptionv3':
+    decoder = InceptionV3.inception3_dec(args.dec_m)
 else:
-    # inception 3
-    decoder = net.inception3_dec(dec_m)
+    assert False,"Wrong decoder"
     
-network = net.Net(encoder, decoder)#,switch)
+network = net.Net(encoder, decoder)
 
 if args.test:
     image = transforms.ToTensor()(Image.open(args.test_img).convert('RGB'))

@@ -1,18 +1,15 @@
 import torch.nn as nn
-import torchvision
 import torch
-
 import math
-import torch.utils.model_zoo as model_zoo
+""""
+Definition of models related to ResNet and function used for creating
+"""
 
-
-__all__ = ['resnet18']
-
-
-model_urls = {
-    'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
-}
-
+def resnet18_dec(decoder=None):
+    model = ResNet_dec(BasicBlock,[2,2,2,2])
+    if decoder != None:
+        model.load_state_dict(torch.load(decoder))
+    return model
 
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
@@ -50,7 +47,6 @@ class BasicBlock(nn.Module):
 
         return out
         
-
 class ResNet(nn.Module):
 
     def __init__(self, block, layers, num_classes=1000):
@@ -175,7 +171,3 @@ class ResNet_dec(nn.Module):
 
         return x
 
-
-def resnet18_dec(**kwargs):
-    model = ResNet_dec(BasicBlock, [2, 2, 2, 2], **kwargs)
-    return model
