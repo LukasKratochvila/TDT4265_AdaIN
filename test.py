@@ -1,4 +1,3 @@
-import argparse
 import os
 import torch
 from PIL import Image
@@ -11,6 +10,7 @@ from networks import net
 from networks import VGG19
 from networks import ResNet
 from networks import InceptionV3
+from options.test_options import TestOptions
 
 from function import adaptive_instance_normalization
 from function import coral
@@ -45,56 +45,11 @@ def style_transfer(vgg, decoder, content, style, alpha=1.0,
     return decoder(feat)
 
 
-parser = argparse.ArgumentParser()
-# Basic options
-parser.add_argument('--content', type=str,
-                    help='File path to the content image')
-parser.add_argument('--content_dir', type=str,
-                    help='Directory path to a batch of content images')
-parser.add_argument('--style', type=str,
-                    help='File path to the style image, or multiple style \
-                    images separated by commas if you want to do style \
-                    interpolation or spatial control')
-parser.add_argument('--style_dir', type=str,
-                    help='Directory path to a batch of style images')
-parser.add_argument('--enc', type=str, default='weights/vgg_normalised.pth')
-parser.add_argument('--dec', type=str, default='VGG19')
-parser.add_argument('--dec_m', type=str, default='weights/decoder.pth')
-
-# Additional options
-parser.add_argument('--content_size', type=int, default=512,
-                    help='New (minimum) size for the content image, \
-                    keeping the original size if set to 0')
-parser.add_argument('--style_size', type=int, default=512,
-                    help='New (minimum) size for the style image, \
-                    keeping the original size if set to 0')
-parser.add_argument('--crop', action='store_true',
-                    help='do center crop to create squared image')
-parser.add_argument('--save_ext', default='.jpg',
-                    help='The extension name of the output image')
-parser.add_argument('--output', type=str, default='output',
-                    help='Directory to save the output image(s)')
-
-# Advanced options
-parser.add_argument('--preserve_color', action='store_true',
-                    help='If specified, preserve color of the content image')
-parser.add_argument('--alpha', type=float, default=1.0,
-                    help='The weight that controls the degree of \
-                             stylization. Should be between 0 and 1')
-parser.add_argument(
-    '--style_interpolation_weights', type=str, default='',
-    help='The weight for blending the style of multiple style images')
-
-args = parser.parse_args()
+args = TestOptions().parse()  # get test options
 
 do_interpolation = False
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# Either --content or --contentDir should be given.
-assert (args.content or args.content_dir)
-# Either --style or --styleDir should be given.
-assert (args.style or args.style_dir)
 
 if args.content:
     content_paths = [args.content]
@@ -120,19 +75,19 @@ if not os.path.exists(args.output):
     os.mkdir(args.output)
 
 # if we don't get the model we use vgg
-if args.enc == 'weights/vgg_normalised.pth':
-    encoder = VGG19.vgg19(args.enc)
+if args.enc_w == 'weights/vgg_normalised.pth':
+    encoder = VGG19.vgg19(args.enc_w)
 else:
     assert False,"Wrong encoder"
         
 if args.dec == 'VGG19':
-    decoder = VGG19.vgg19_dec(args.dec_m)
+    decoder = VGG19.vgg19_dec(args.dec_w)
 elif args.dec == 'VGG19B':
-    decoder = VGG19.vgg19B_dec(args.dec_m)
+    decoder = VGG19.vgg19B_dec(args.dec_w)
 elif args.dec == 'resnet18':
-    decoder = ResNet.resnet18_dec(args.dec_m)
+    decoder = ResNet.resnet18_dec(args.dec_w)
 elif args.dec == 'inceptionv3':
-    decoder = InceptionV3.inception3_dec(args.dec_m)
+    decoder = InceptionV3.inception3_dec(args.dec_w)
 else:
     assert False,"Wrong decoder"
     

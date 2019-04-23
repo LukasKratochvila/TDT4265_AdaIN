@@ -1,4 +1,3 @@
-import argparse
 import os
 import torch
 import torch.backends.cudnn as cudnn
@@ -13,6 +12,7 @@ from networks import net
 from networks import VGG19
 from networks import ResNet
 from networks import InceptionV3
+from options.train_options import TrainOptions
 
 from sampler import InfiniteSamplerWrapper
 
@@ -56,32 +56,7 @@ def adjust_learning_rate(optimizer, iteration_count):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
-
-parser = argparse.ArgumentParser()
-# Basic options
-parser.add_argument('--content_dir', type=str, required=True,
-                    help='Directory path to a batch of content images')
-parser.add_argument('--style_dir', type=str, required=True,
-                    help='Directory path to a batch of style images')
-parser.add_argument('--enc', type=str, default='weights/vgg_normalised.pth')
-parser.add_argument('--dec', type=str, default='VGG19')
-
-# training options
-parser.add_argument('--save_dir', default='./experiments',
-                    help='Directory to save the model')
-parser.add_argument('--log_dir', default='./logs',
-                    help='Directory to save the log')
-parser.add_argument('--lr', type=float, default=1e-4)
-parser.add_argument('--lr_decay', type=float, default=5e-5)
-parser.add_argument('--max_iter', type=int, default=160000)
-parser.add_argument('--batch_size', type=int, default=8)
-parser.add_argument('--style_weight', type=float, default=10.0)
-parser.add_argument('--content_weight', type=float, default=1.0)
-parser.add_argument('--n_threads', type=int, default=16)
-parser.add_argument('--save_model_interval', type=int, default=10000)
-parser.add_argument('--verbose', action='store_true')
-
-args = parser.parse_args()
+args = TrainOptions().parse()
 
 device = torch.device('cuda')
 
@@ -93,8 +68,8 @@ if not os.path.exists(args.log_dir):
 writer = SummaryWriter(log_dir=args.log_dir)
 
 # if we don't get the model we use vgg
-if args.enc == 'weights/vgg_normalised.pth':
-    encoder = VGG19.vgg19(args.enc)
+if args.enc_w == 'weights/vgg_normalised.pth':
+    encoder = VGG19.vgg19(args.enc_w)
 else:
     assert False,"Wrong encoder"
         
@@ -110,7 +85,7 @@ else:
     assert False,"Wrong decoder"
     
 network = net.Net(encoder, decoder)
-network.print_networks(args.verbose)
+network.print_networks(args.expr_dir,args.verbose)
 network.train()
 network.to(device)
 
@@ -152,6 +127,5 @@ for i in tqdm(range(args.max_iter)):
         for key in state_dict.keys():
             state_dict[key] = state_dict[key].to(torch.device('cpu'))
         torch.save(state_dict,
-                   '{:s}/decoder_iter_{:d}.pth'.format(args.save_dir,
-                                                           i + 1))
+                   '{:s}/decoder_iter_{:d}.pth'.format(args.expr_dir, i + 1))
 writer.close()

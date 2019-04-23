@@ -1,4 +1,5 @@
 import torch.nn as nn
+import os
 
 from function import adaptive_instance_normalization as adain
 from function import calc_mean_std
@@ -73,13 +74,14 @@ class Net(nn.Module):
             loss_s += self.calc_style_loss(g_t_feats[i], style_feats[i])
         return loss_c, loss_s
     
-    def print_networks(self, verbose):
+    def print_networks(self, expr_dir, verbose):
         """Print the total number of parameters in the network and (if verbose) network architecture
 
         Parameters:
             verbose (bool) -- if verbose: print the network architecture
         """
-        print('---------- Networks initialized -------------')
+        message = '\n'
+        message += '---------- Networks initialized -------------\n'
         for name in self.model_names:
             if isinstance(name, str):
                 net = getattr(self, name)
@@ -87,6 +89,11 @@ class Net(nn.Module):
                 for param in net.parameters():
                     num_params += param.numel()
                 if verbose:
-                    print(net)
-                print('[Network %s] Total number of parameters : %.3f M' % (name, num_params / 1e6))
-        print('-----------------------------------------------')
+                    message += str(net) + '\n'
+                message += '[Network %s] Total number of parameters : %.3f M\n' % (name, num_params / 1e6)
+        message += '-----------------------------------------------'
+        print(message)
+        file_name = os.path.join(expr_dir, 'opt.txt')
+        with open(file_name, 'a') as opt_file:
+            opt_file.write(message)
+            opt_file.write('\n')
