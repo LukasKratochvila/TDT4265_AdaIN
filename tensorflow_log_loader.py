@@ -5,12 +5,12 @@ from tensorboard.backend.event_processing.event_accumulator import EventAccumula
 
 import matplotlib.pyplot as plt
 
-def plot_tensorflow_log(path, save_dir, num_load):
+def plot_tensorflow_log(args):
 
     # Loading too much data is slow...
-    tf_size_guidance = {'scalars': num_load}
+    tf_size_guidance = {'scalars': args.num_load}
 
-    event_acc = EventAccumulator(path, tf_size_guidance)
+    event_acc = EventAccumulator(args.log_name, tf_size_guidance)
     event_acc.Reload()
     
     fig1 = plt.figure()
@@ -49,14 +49,19 @@ def plot_tensorflow_log(path, save_dir, num_load):
     ax1.set_title("Training Progress")
     ax1.legend(loc='upper right', frameon=True)
     ax1.set_yscale("log")
-    #ax1.savefig('{:s}/losses_{:s}.eps'.format(save_dir, path[-17:]))
-    plt.show()
+    if args.save:
+        if not os.path.exists(args.save_dir):
+            os.mkdir(args.save_dir)
+        plt.savefig('{:s}/losses_{:s}.eps'.format(args.save_dir, args.log_name[-17:]))
+    else:
+        plt.show()
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--log_dir', type=str, default='./logs' , help='Log dir')
     parser.add_argument('--log_name', type=str, default=None ,help='Log name')
+    parser.add_argument('--save', action='store_true')
     parser.add_argument('--save_dir', type=str, default='./plots',
 			help='Dir for save plot, default ./plots')
     parser.add_argument('--num_load', type=int, default=160000)
@@ -67,10 +72,6 @@ if __name__ == '__main__':
         timestamps = [os.path.getmtime(log) for log in logs]
         recent_idx = np.argmax(timestamps)
         log_name = logs[recent_idx]
-    else:
-        log_name = parser.parse_args().log_name
+        args.log_name = log_name
 
-    if not os.path.exists(args.save_dir):
-    	os.mkdir(args.save_dir)
-
-plot_tensorflow_log(log_name, args.save_dir, args.num_load)
+plot_tensorflow_log(args)
