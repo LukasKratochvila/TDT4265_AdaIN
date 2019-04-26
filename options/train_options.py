@@ -12,6 +12,9 @@ class TrainOptions(BaseOptions):
         # training options
         parser.add_argument('--save_dir', default='./experiments',
                             help='Directory to save the model')
+        parser.add_argument('--name', type=str, default='experiment_name',
+                            help='name of the experiment. It decides where to store samples and models')
+        
         #parser.add_argument('--log_dir', default='./logs',
         #                    help='Directory to save the log')
         parser.add_argument('--lr', type=float, default=1e-4,
