@@ -26,11 +26,11 @@ def test_transform(size, crop):
     transform = transforms.Compose(transform_list)
     return transform
 
-def style_transfer(vgg, decoder, content, style, alpha=1.0,
+def style_transfer(encoder, decoder, content, style, alpha=1.0,
                    interpolation_weights=None):
     assert (0.0 <= alpha <= 1.0)
-    content_f = vgg(content)
-    style_f = vgg(style)
+    content_f = encoder(content)
+    style_f = encoder(style)
     if interpolation_weights:
         _, C, H, W = content_f.size()
         feat = torch.FloatTensor(1, C, H, W).zero_().to(device)
@@ -51,7 +51,9 @@ do_interpolation = False
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 if args.content:
-    content_paths = [args.content]
+    content_paths = args.content.split(',')
+    if len(content_paths) == 1:
+        content_paths = [args.content]
 else:
     content_paths = [os.path.join(args.content_dir, f) for f in
                      os.listdir(args.content_dir)]
@@ -101,11 +103,11 @@ network.to(device)
 content_tf = test_transform(args.content_size, args.crop)
 style_tf = test_transform(args.style_size, args.crop)
 
-content_loss = torch.Tensor(len(content_paths),\
-                            1 if do_interpolation else len(style_paths))
-style_loss = torch.Tensor(len(content_paths),\
+content_loss = torch.FloatTensor(len(content_paths),\
+                            1 if do_interpolation else len(style_paths)).zero_()
+style_loss = torch.FloatTensor(len(content_paths),\
                           1 if do_interpolation else len(style_paths),\
-                          network.num_enc)
+                          network.num_enc).zero_()
 for content_path in content_paths:
     if do_interpolation:  # one content image, N style image
         style = torch.stack([style_tf(Image.open(p).convert('RGB')) for p in style_paths])
@@ -122,9 +124,13 @@ for content_path in content_paths:
         if not args.only_loss:
             save_image(output, output_name)
         
-        result = output[:style.shape[0],:style.shape[1],:style.shape[2],:style.shape[3]]
+        style_c = torch.FloatTensor(style[:1].shape).zero_()
+        for i, w in enumerate(interpolation_weights):
+            style_c += w * style[i] 
+        result = output[:style_c.shape[0],:style_c.shape[1],:style_c.shape[2],:style_c.shape[3]]
+        style_c = style[:result.shape[0],:result.shape[1],:result.shape[2],:result.shape[3]]
         content_loss[content_paths.index(content_path)], \
-        style_loss[content_paths.index(content_path)] = network.losses(style,result)
+        style_loss[content_paths.index(content_path)] = network.losses(style_c,result)
         
     else:  # process one content and one style
         for style_path in style_paths:
@@ -146,10 +152,11 @@ for content_path in content_paths:
                 save_image(output, output_name)
             
             result = output[:style.shape[0],:style.shape[1],:style.shape[2],:style.shape[3]]
+            style_c = style[:result.shape[0],:result.shape[1],:result.shape[2],:result.shape[3]]
             content_loss[content_paths.index(content_path)]\
             [style_paths.index(style_path)],\
             style_loss[content_paths.index(content_path)]\
-            [style_paths.index(style_path)] = network.losses(style,result)
+            [style_paths.index(style_path)] = network.losses(style_c,result)
 
 print("Content loss:%.3f" %content_loss.mean())
 message = ""

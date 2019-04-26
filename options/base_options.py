@@ -131,6 +131,7 @@ class BaseOptions():
                 os.mkdir(opt.save_dir)                
             #if not os.path.exists(opt.log_dir):
                 #os.mkdir(opt.log_dir)
+            assert (opt.content_dir or opt.style_dir), "Missing content or style dir"
         
         # Either --content or --contentDir should be given.
         assert (opt.content or opt.content_dir), "Missing content image/s"
