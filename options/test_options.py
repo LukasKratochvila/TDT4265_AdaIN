@@ -22,7 +22,8 @@ class TestOptions(BaseOptions):
                             help='The extension name of the output image')
         parser.add_argument('--output', type=str, default='output',
                             help='Directory to save the output image(s)')
-        
+        parser.add_argument('--only_loss', action='store_true',
+                            help='Not save output, only print loss')
         # Advanced options
         parser.add_argument('--preserve_color', action='store_true',
                             help='If specified, preserve color of the content image')

@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import os
 
@@ -73,6 +74,16 @@ class Net(nn.Module):
         for i in range(1, len(style_feats)):
             loss_s += self.calc_style_loss(g_t_feats[i], style_feats[i])
         return loss_c, loss_s
+    
+    def losses(self, style, result):
+        style_feats = self.encode_with_intermediate(style)
+        result_feats = self.encode_with_intermediate(result)
+
+        loss_c = self.calc_content_loss(style_feats[-1], result_feats[-1])
+        loss_s = torch.Tensor(len(result_feats),1)
+        for i in range(len(result_feats)):
+            loss_s[i] = self.calc_style_loss(style_feats[i], result_feats[i])
+        return loss_c, loss_s.transpose(0,1)
     
     def print_networks(self, expr_dir, verbose):
         """Print the total number of parameters in the network and (if verbose) network architecture

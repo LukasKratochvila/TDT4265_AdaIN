@@ -133,9 +133,9 @@ class BaseOptions():
                 #os.mkdir(opt.log_dir)
         
         # Either --content or --contentDir should be given.
-        assert (opt.content or opt.content_dir)
+        assert (opt.content or opt.content_dir), "Missing content image/s"
         # Either --style or --styleDir should be given.
-        assert (opt.style or opt.style_dir)
+        assert (opt.style or opt.style_dir), "Missing style image/s"
         """
         # process opt.suffix
         if opt.suffix:
