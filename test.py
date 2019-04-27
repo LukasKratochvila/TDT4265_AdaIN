@@ -95,6 +95,7 @@ network = net.Net(encoder, decoder)
 network.decoder.eval()
 for i in range(network.num_enc):
     getattr(network, 'enc_{:d}'.format(i + 1)).eval()
+    getattr(network, 'enc_{:d}'.format(i + 1)).to(device)
 
 network.to(device)
 
