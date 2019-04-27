@@ -111,6 +111,7 @@ style_losses = torch.FloatTensor(len(content_paths),\
 time_elapsed = torch.FloatTensor(len(content_paths), 1 if do_interpolation \
                                  else len(style_paths)).zero_()
 for i,content_path in enumerate(content_paths):
+    start_time = time.time()
     if do_interpolation:  # one content image, N style image
         style = torch.stack([style_tf(Image.open(p).convert('RGB')) for p in style_paths])
         content = content_tf(Image.open(content_path).convert('RGB')) \
@@ -118,16 +119,15 @@ for i,content_path in enumerate(content_paths):
         style = style.to(device)
         content = content.to(device)
         with torch.no_grad():
-            start_time = time.time() 
             output = style_transfer(network.encode, network.decoder, content, style,
                                     args.alpha, interpolation_weights)
-            time_elapsed[i] = time.time() - start_time
         output = output.cpu()
         output_name = '{:s}/{:s}_interpolation{:s}'.format(
             args.output, splitext(basename(content_path))[0], args.save_ext)
         if not args.only_loss:
             save_image(output, output_name)
         
+        time_elapsed[i] = time.time() - start_time
         style_c = torch.FloatTensor(style[:1].shape).zero_()
         for i, w in enumerate(interpolation_weights):
             style_c += w * style[i] 
@@ -147,10 +147,8 @@ for i,content_path in enumerate(content_paths):
             style = style.to(device).unsqueeze(0)
             content = content.to(device).unsqueeze(0)
             with torch.no_grad():
-                start_time = time.time()
                 output = style_transfer(network.encode, network.decoder,
                                         content, style, args.alpha)
-                time_elapsed[i][j] = time.time() - start_time
             output = output.cpu()
             
             output_name = '{:s}/{:s}_stylized_{:s}{:s}'.format(
@@ -158,6 +156,7 @@ for i,content_path in enumerate(content_paths):
                 splitext(basename(style_path))[0], args.save_ext)
             if not args.only_loss:
                 save_image(output, output_name)
+            time_elapsed[i][j] = time.time() - start_time
             
             result = output[:style.shape[0],:style.shape[1],:style.shape[2],:style.shape[3]]
             result = result.to(device)
@@ -174,3 +173,4 @@ for i in range(1,style_losses.shape[2]):
     message += " level {:d}: {:.3f}".format(i, style_losses.transpose(0,2)[i].mean())
 print("Style img - content loss %.3f"%style_losses.transpose(0,2)[0].mean(),"style loss", message)
 print("Time for one image {:.3f}sec, {:.3f} img per sec".format(time_elapsed.mean(),1/time_elapsed.mean()))
+print(time_elapsed)
