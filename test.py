@@ -127,6 +127,7 @@ for i,content_path in enumerate(content_paths):
         for i, w in enumerate(interpolation_weights):
             style_c += w * style[i] 
         result = output[:style_c.shape[0],:style_c.shape[1],:style_c.shape[2],:style_c.shape[3]]
+        result.to(device)
         content_c = content[:result.shape[0],:result.shape[1],:result.shape[2],:result.shape[3]]
         style_c = style[:result.shape[0],:result.shape[1],:result.shape[2],:result.shape[3]]
         content_losses[i] = network.losses(content_c,result)
@@ -152,6 +153,7 @@ for i,content_path in enumerate(content_paths):
                 save_image(output, output_name)
             
             result = output[:style.shape[0],:style.shape[1],:style.shape[2],:style.shape[3]]
+            result.to(device)
             content_c = content[:result.shape[0],:result.shape[1],:result.shape[2],:result.shape[3]]
             style_c = style[:result.shape[0],:result.shape[1],:result.shape[2],:result.shape[3]]
             content_losses[i][j] = network.losses(content_c,result)
