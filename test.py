@@ -80,9 +80,9 @@ else:
     assert False,"Wrong encoder"
         
 if args.dec == 'VGG19':
-    decoder = VGG19.vgg19_dec(args.dec_w)
+    decoder = VGG19.vgg19_dec(args.dec_w, args.dev_BN)
 elif args.dec == 'VGG19B':
-    decoder = VGG19.vgg19B_dec(args.dec_w)
+    decoder = VGG19.vgg19B_dec(args.dec_w, args.dev_BN)
 elif args.dec == 'resnet18':
     decoder = ResNet.resnet18_dec(args.dec_w)
 elif args.dec == 'inceptionv3':
