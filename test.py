@@ -62,10 +62,8 @@ if args.style:
     style_paths = args.style.split(',')
     if len(style_paths) == 1:
         style_paths = [args.style]
-    else:
+    elif args.style_interpolation_weights != '':
         do_interpolation = True
-        assert (args.style_interpolation_weights != ''), \
-            'Please specify interpolation weights'
         weights = [int(i) for i in args.style_interpolation_weights.split(',')]
         interpolation_weights = [w / sum(weights) for w in weights]
 else:
@@ -103,12 +101,13 @@ network.to(device)
 content_tf = test_transform(args.content_size, args.crop)
 style_tf = test_transform(args.style_size, args.crop)
 
-content_loss = torch.FloatTensor(len(content_paths),\
-                            1 if do_interpolation else len(style_paths)).zero_()
-style_loss = torch.FloatTensor(len(content_paths),\
+content_losses = torch.FloatTensor(len(content_paths),\
+                            1 if do_interpolation else len(style_paths),\
+                                 network.num_enc+1).zero_()
+style_losses = torch.FloatTensor(len(content_paths),\
                           1 if do_interpolation else len(style_paths),\
-                          network.num_enc).zero_()
-for content_path in content_paths:
+                          network.num_enc+1).zero_()
+for i,content_path in enumerate(content_paths):
     if do_interpolation:  # one content image, N style image
         style = torch.stack([style_tf(Image.open(p).convert('RGB')) for p in style_paths])
         content = content_tf(Image.open(content_path).convert('RGB')) \
@@ -128,12 +127,13 @@ for content_path in content_paths:
         for i, w in enumerate(interpolation_weights):
             style_c += w * style[i] 
         result = output[:style_c.shape[0],:style_c.shape[1],:style_c.shape[2],:style_c.shape[3]]
+        content_c = content[:result.shape[0],:result.shape[1],:result.shape[2],:result.shape[3]]
         style_c = style[:result.shape[0],:result.shape[1],:result.shape[2],:result.shape[3]]
-        content_loss[content_paths.index(content_path)], \
-        style_loss[content_paths.index(content_path)] = network.losses(style_c,result)
+        content_losses[i] = network.losses(content_c,result)
+        style_losses[i] = network.losses(style_c,result)
         
     else:  # process one content and one style
-        for style_path in style_paths:
+        for j,style_path in enumerate(style_paths):
             content = content_tf(Image.open(content_path).convert('RGB'))
             style = style_tf(Image.open(style_path).convert('RGB'))
             if args.preserve_color:
@@ -152,14 +152,15 @@ for content_path in content_paths:
                 save_image(output, output_name)
             
             result = output[:style.shape[0],:style.shape[1],:style.shape[2],:style.shape[3]]
+            content_c = content[:result.shape[0],:result.shape[1],:result.shape[2],:result.shape[3]]
             style_c = style[:result.shape[0],:result.shape[1],:result.shape[2],:result.shape[3]]
-            content_loss[content_paths.index(content_path)]\
-            [style_paths.index(style_path)],\
-            style_loss[content_paths.index(content_path)]\
-            [style_paths.index(style_path)] = network.losses(style_c,result)
-
-print("Content loss:%.3f" %content_loss.mean())
+            content_losses[i][j] = network.losses(content_c,result)
+            style_losses[i][j] = network.losses(style_c,result)
 message = ""
-for i in range(style_loss.shape[2]):
-    message += " level {:d}: {:.3f}".format(i+1, style_loss.transpose(0,2)[i].mean())
-print("Style loss", message)
+for i in range(1,content_losses.shape[2]):
+    message += " level {:d}: {:.3f}".format(i, content_losses.transpose(0,2)[i].mean())
+print("Content img - content loss %.3f"%content_losses.transpose(0,2)[0].mean(),"style loss", message)
+message = ""
+for i in range(1,style_losses.shape[2]):
+    message += " level {:d}: {:.3f}".format(i, style_losses.transpose(0,2)[i].mean())
+print("Style img - content loss %.3f"%style_losses.transpose(0,2)[0].mean(),"style loss", message)
