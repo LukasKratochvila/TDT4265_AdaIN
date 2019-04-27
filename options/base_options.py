@@ -33,6 +33,8 @@ class BaseOptions():
                             help='specify decoder architecture [VGG19 | resnet18 | inceptionv3]')
         parser.add_argument('--dec_w', type=str, default='weights/decoder.pth', 
                             help='specify decoder weights')
+        parser.add_argument('--dec_BN', action='store_true',
+                            help='Use decoder with batch normalization')
 
 
         """
@@ -99,7 +101,7 @@ class BaseOptions():
             default = self.parser.get_default(k)
             if v != default:
                 comment = '\t[default: %s]' % str(default)
-            message += '{:>25}: {:<30}{}\n'.format(str(k), str(v), comment)
+            message += '{:>27}: {:<30}{}\n'.format(str(k), str(v), comment)
         message += '----------------- End -------------------'
         print(message)
 

@@ -12,19 +12,121 @@ def vgg19(encoder):
     model.load_state_dict(torch.load(encoder))
     return model
 
-def vgg19_dec(decoder=None):
-    model = Vgg19_short_dec
+def vgg19_dec(decoder=None, BN=False):
+    if BN:
+        model = Vgg19BN_short_dec
+    else:
+        model = Vgg19_short_dec
     if decoder != None:
         model.load_state_dict(torch.load(decoder))
     return model
 
-def vgg19B_dec(decoder=None):
-    model = Vgg19_long_dec
+def vgg19B_dec(decoder=None, BN=False):
+    if BN:
+        model = Vgg19BN_long_dec
+    else:
+        model = Vgg19_long_dec
     if decoder != None:
         model.load_state_dict(torch.load(decoder))
     return model
 
-
+Vgg19BN_long_dec = nn.Sequential(
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(512, 512, (3, 3)),
+    nn.BatchNorm2d(512),
+    nn.ReLU(),
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(512, 512, (3, 3)),
+    nn.BatchNorm2d(512),
+    nn.ReLU(),
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(512, 512, (3, 3)),
+    nn.BatchNorm2d(512),
+    nn.ReLU(),
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(512, 512, (3, 3)),
+    nn.BatchNorm2d(512),
+    nn.ReLU(),
+    nn.Upsample(scale_factor=2, mode='nearest'),
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(512, 512, (3, 3)),
+    nn.BatchNorm2d(512),
+    nn.ReLU(),
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(512, 512, (3, 3)),
+    nn.BatchNorm2d(512),
+    nn.ReLU(),
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(512, 256, (3, 3)),
+    nn.BatchNorm2d(256),
+    nn.ReLU(),
+    nn.Upsample(scale_factor=2, mode='nearest'),
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(256, 256, (3, 3)),
+    nn.BatchNorm2d(256),
+    nn.ReLU(),
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(256, 256, (3, 3)),
+    nn.BatchNorm2d(256),
+    nn.ReLU(),
+    nn.Upsample(scale_factor=2, mode='nearest'),
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(256, 128, (3, 3)),
+    nn.BatchNorm2d(128),
+    nn.ReLU(),
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(128, 128, (3, 3)),
+    nn.BatchNorm2d(128),
+    nn.ReLU(),
+    nn.Upsample(scale_factor=2, mode='nearest'),
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(128, 64, (3, 3)),
+    nn.BatchNorm2d(64),
+    nn.ReLU(),
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(64, 64, (3, 3)),
+    nn.BatchNorm2d(64),
+    nn.ReLU(),
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(64, 3, (3, 3)),
+    nn.ReLU(),
+)
+Vgg19BN_short_dec = nn.Sequential(
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(512, 256, (3, 3)),
+    nn.BatchNorm2d(256),
+    nn.ReLU(),
+    nn.Upsample(scale_factor=2, mode='nearest'),
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(256, 256, (3, 3)),
+    nn.BatchNorm2d(256),
+    nn.ReLU(),
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(256, 256, (3, 3)),
+    nn.BatchNorm2d(256),
+    nn.ReLU(),
+    nn.Upsample(scale_factor=2, mode='nearest'),
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(256, 128, (3, 3)),
+    nn.BatchNorm2d(128),
+    nn.ReLU(),
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(128, 128, (3, 3)),
+    nn.BatchNorm2d(128),
+    nn.ReLU(),
+    nn.Upsample(scale_factor=2, mode='nearest'),
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(128, 64, (3, 3)),
+    nn.BatchNorm2d(64),
+    nn.ReLU(),
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(64, 64, (3, 3)),
+    nn.BatchNorm2d(64),
+    nn.ReLU(),
+    nn.ReflectionPad2d((1, 1, 1, 1)),
+    nn.Conv2d(64, 3, (3, 3)),
+    nn.ReLU(),
+)
 Vgg19_long_dec = nn.Sequential(
     nn.ReflectionPad2d((1, 1, 1, 1)),
     nn.Conv2d(512, 512, (3, 3)),
