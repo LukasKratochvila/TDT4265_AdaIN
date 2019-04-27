@@ -108,8 +108,8 @@ content_losses = torch.FloatTensor(len(content_paths),\
 style_losses = torch.FloatTensor(len(content_paths),\
                           1 if do_interpolation else len(style_paths),\
                           network.num_enc+1).zero_()
-time_elapsed = torch.FloatTensor(len(content_paths) if do_interpolation \
-                                 else len(content_paths)+len(style_paths)-1,1).zero_()
+time_elapsed = torch.FloatTensor(len(content_paths), 1 if do_interpolation \
+                                 else len(style_paths)).zero_()
 for i,content_path in enumerate(content_paths):
     if do_interpolation:  # one content image, N style image
         style = torch.stack([style_tf(Image.open(p).convert('RGB')) for p in style_paths])
@@ -150,7 +150,7 @@ for i,content_path in enumerate(content_paths):
                 start_time = time.time()
                 output = style_transfer(network.encode, network.decoder,
                                         content, style, args.alpha)
-                time_elapsed[i] = time.time() - start_time
+                time_elapsed[i][j] = time.time() - start_time
             output = output.cpu()
             
             output_name = '{:s}/{:s}_stylized_{:s}{:s}'.format(
@@ -173,4 +173,4 @@ message = ""
 for i in range(1,style_losses.shape[2]):
     message += " level {:d}: {:.3f}".format(i, style_losses.transpose(0,2)[i].mean())
 print("Style img - content loss %.3f"%style_losses.transpose(0,2)[0].mean(),"style loss", message)
-print("Time for one image {:.3f}sec, {:.3f} per sec".format(time_elapsed.mean(),1/time_elapsed.mean()))
+print("Time for one image {:.3f}sec, {:.3f} img per sec".format(time_elapsed.mean(),1/time_elapsed.mean()))
