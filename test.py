@@ -173,4 +173,3 @@ for i in range(1,style_losses.shape[2]):
     message += " level {:d}: {:.3f}".format(i, style_losses.transpose(0,2)[i].mean())
 print("Style img - content loss %.3f"%style_losses.transpose(0,2)[0].mean(),"style loss", message)
 print("Time for one image {:.3f}sec, {:.3f} img per sec".format(time_elapsed.mean(),1/time_elapsed.mean()))
-print(time_elapsed)
