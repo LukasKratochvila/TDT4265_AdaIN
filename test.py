@@ -108,8 +108,8 @@ content_losses = torch.FloatTensor(len(content_paths),\
 style_losses = torch.FloatTensor(len(content_paths),\
                           1 if do_interpolation else len(style_paths),\
                           network.num_enc+1).zero_()
-time_elapsed = torch.FloatTensor(len(content_paths) + \
-                          0 if do_interpolation else len(style_paths),1).zero_()
+time_elapsed = torch.FloatTensor(len(content_paths) if do_interpolation \
+                                 else len(content_paths)+len(style_paths)-1,1).zero_()
 for i,content_path in enumerate(content_paths):
     if do_interpolation:  # one content image, N style image
         style = torch.stack([style_tf(Image.open(p).convert('RGB')) for p in style_paths])
