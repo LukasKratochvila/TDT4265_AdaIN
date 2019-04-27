@@ -1,5 +1,6 @@
 import os
 import torch
+import time
 from PIL import Image
 from os.path import basename
 from os.path import splitext
@@ -107,6 +108,8 @@ content_losses = torch.FloatTensor(len(content_paths),\
 style_losses = torch.FloatTensor(len(content_paths),\
                           1 if do_interpolation else len(style_paths),\
                           network.num_enc+1).zero_()
+time_elapsed = torch.FloatTensor(len(content_paths) + 
+                          0 if do_interpolation else len(style_paths),1).zero_()
 for i,content_path in enumerate(content_paths):
     if do_interpolation:  # one content image, N style image
         style = torch.stack([style_tf(Image.open(p).convert('RGB')) for p in style_paths])
@@ -115,8 +118,10 @@ for i,content_path in enumerate(content_paths):
         style = style.to(device)
         content = content.to(device)
         with torch.no_grad():
+            start_time = time.time() 
             output = style_transfer(network.encode, network.decoder, content, style,
                                     args.alpha, interpolation_weights)
+            time_elapsed[i] = time.time() - start_time
         output = output.cpu()
         output_name = '{:s}/{:s}_interpolation{:s}'.format(
             args.output, splitext(basename(content_path))[0], args.save_ext)
@@ -142,8 +147,10 @@ for i,content_path in enumerate(content_paths):
             style = style.to(device).unsqueeze(0)
             content = content.to(device).unsqueeze(0)
             with torch.no_grad():
+                start_time = time.time()
                 output = style_transfer(network.encode, network.decoder,
                                         content, style, args.alpha)
+                time_elapsed[i] = time.time() - start_time
             output = output.cpu()
             
             output_name = '{:s}/{:s}_stylized_{:s}{:s}'.format(
@@ -166,3 +173,4 @@ message = ""
 for i in range(1,style_losses.shape[2]):
     message += " level {:d}: {:.3f}".format(i, style_losses.transpose(0,2)[i].mean())
 print("Style img - content loss %.3f"%style_losses.transpose(0,2)[0].mean(),"style loss", message)
+print("Time for one image {:.3f}sec, {:.3f} per sec".format(time_elapsed.mean(),1/time_elapsed.mean()))
