@@ -38,6 +38,7 @@ def plot_tensorflow_log(args):
                 y_trend = np.poly1d(np.polyfit(x,y[:,0],5))(x)
 
             ax1.plot(x, y_trend, label='loss_trend', color="red")
+        print("Final auto loss: %.3f "%np.mean(y[-100:]))
     else:
         loss_content = event_acc.Scalars('loss_content')
         loss_style = event_acc.Scalars('loss_style')
@@ -64,6 +65,7 @@ def plot_tensorflow_log(args):
 
             ax1.plot(x, y_trend1, label='loss_style_trend', color="red")
             ax1.plot(x, y_trend2, label='loss_content_trend', color="blue")
+        print("Final content loss: %.3f style loss: %.3f"%(np.mean(y[-100:,1]),np.mean(y[-100:,1])))
 
     ax1.set_xlabel("Iter")
     ax1.set_ylabel("loss")
