@@ -130,8 +130,8 @@ for i,content_path in enumerate(content_paths):
         result.to(device)
         content_c = content[:result.shape[0],:result.shape[1],:result.shape[2],:result.shape[3]]
         style_c = style[:result.shape[0],:result.shape[1],:result.shape[2],:result.shape[3]]
-        content_losses[i] = network.losses(content_c,result)
-        style_losses[i] = network.losses(style_c,result)
+        content_losses[i] = network.losses(content_c,result).cpu()
+        style_losses[i] = network.losses(style_c,result).cpu()
         
     else:  # process one content and one style
         for j,style_path in enumerate(style_paths):
@@ -156,8 +156,8 @@ for i,content_path in enumerate(content_paths):
             result.to(device)
             content_c = content[:result.shape[0],:result.shape[1],:result.shape[2],:result.shape[3]]
             style_c = style[:result.shape[0],:result.shape[1],:result.shape[2],:result.shape[3]]
-            content_losses[i][j] = network.losses(content_c,result)
-            style_losses[i][j] = network.losses(style_c,result)
+            content_losses[i][j] = network.losses(content_c,result).cpu()
+            style_losses[i][j] = network.losses(style_c,result).cpu()
 message = ""
 for i in range(1,content_losses.shape[2]):
     message += " level {:d}: {:.3f}".format(i, content_losses.transpose(0,2)[i].mean())
