@@ -5,15 +5,25 @@ import os
 from function import adaptive_instance_normalization as adain
 from function import calc_mean_std
 
+"""
+Classe that connects the full architecture 
+togheter: encoder, AdaIN and decoder
+"""
+
 class Net(nn.Module):
     def __init__(self, encoder, decoder):#, switch):
         super(Net, self).__init__()
         enc_layers = list(encoder.children())
         
+        
         self.enc_1 = nn.Sequential(*enc_layers[:4])  # input -> relu1_1
         self.enc_2 = nn.Sequential(*enc_layers[4:11])  # relu1_1 -> relu2_1
         self.enc_3 = nn.Sequential(*enc_layers[11:18])  # relu2_1 -> relu3_1
         self.enc_4 = nn.Sequential(*enc_layers[18:31])  # relu3_1 -> relu4_1
+        '''
+        The following two code lines should be uncommnted in order to run the full VGG network.
+        The variable self.num_enc should also be changed to 6.
+        '''
         #self.enc_5 = nn.Sequential(*enc_layers[31:40])  # relu4_1 -> relu5_1
         #self.enc_6 = nn.Sequential(*enc_layers[40:53])  # relu5_1 -> relu5_4
         
@@ -76,6 +86,9 @@ class Net(nn.Module):
         return loss_c, loss_s
     
     def losses(self, style, result):
+        '''
+        Function that computes the losses that are printed during test.
+        '''
         style_feats = self.encode_with_intermediate(style)
         result_feats = self.encode_with_intermediate(result)
 
