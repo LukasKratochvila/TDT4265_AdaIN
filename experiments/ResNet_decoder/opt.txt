@@ -1,0 +1,136 @@
+----------------- Options ---------------
+                  content: None                          
+              content_dir: datasets/train2014/           	[default: None]
+                    style: None                          
+                style_dir: datasets/wikiart              	[default: None]
+                    enc_w: weights/vgg_normalised.pth    
+                      dec: resnet18                      	[default: VGG19]
+                    dec_w: weights/decoder.pth           
+                     name: ResNet_decoder                	[default: experiment_name]
+                 save_dir: ./experiments                 
+                       lr: 0.0001                        
+                 lr_decay: 5e-05                         
+                 max_iter: 80000                         	[default: 160000]
+               batch_size: 8                             
+             style_weight: 10.0                          
+           content_weight: 1.0                           
+                n_threads: 16                            
+      save_model_interval: 10000                         
+                  verbose: True                          
+                  isTrain: True                          	[default: None]
+                 expr_dir: ./experiments/ResNet_decoder  	[default: None]
+----------------- End -------------------
+
+---------- Networks initialized -------------
+Sequential(
+  (0): Conv2d(3, 3, kernel_size=(1, 1), stride=(1, 1))
+  (1): ReflectionPad2d((1, 1, 1, 1))
+  (2): Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1))
+  (3): ReLU()
+)
+[Network enc_1] Total number of parameters : 0.002 M
+Sequential(
+  (0): ReflectionPad2d((1, 1, 1, 1))
+  (1): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1))
+  (2): ReLU()
+  (3): MaxPool2d(kernel_size=(2, 2), stride=(2, 2), padding=(0, 0), dilation=1, ceil_mode=True)
+  (4): ReflectionPad2d((1, 1, 1, 1))
+  (5): Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1))
+  (6): ReLU()
+)
+[Network enc_2] Total number of parameters : 0.111 M
+Sequential(
+  (0): ReflectionPad2d((1, 1, 1, 1))
+  (1): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1))
+  (2): ReLU()
+  (3): MaxPool2d(kernel_size=(2, 2), stride=(2, 2), padding=(0, 0), dilation=1, ceil_mode=True)
+  (4): ReflectionPad2d((1, 1, 1, 1))
+  (5): Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1))
+  (6): ReLU()
+)
+[Network enc_3] Total number of parameters : 0.443 M
+Sequential(
+  (0): ReflectionPad2d((1, 1, 1, 1))
+  (1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1))
+  (2): ReLU()
+  (3): ReflectionPad2d((1, 1, 1, 1))
+  (4): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1))
+  (5): ReLU()
+  (6): ReflectionPad2d((1, 1, 1, 1))
+  (7): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1))
+  (8): ReLU()
+  (9): MaxPool2d(kernel_size=(2, 2), stride=(2, 2), padding=(0, 0), dilation=1, ceil_mode=True)
+  (10): ReflectionPad2d((1, 1, 1, 1))
+  (11): Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1))
+  (12): ReLU()
+)
+[Network enc_4] Total number of parameters : 2.950 M
+ResNet_dec(
+  (conv1): Conv2d(512, 256, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), bias=False)
+  (relu): ReLU(inplace)
+  (upSample1): Upsample(scale_factor=2, mode=nearest)
+  (layer1): Sequential(
+    (0): BasicBlock(
+      (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (relu): ReLU(inplace)
+      (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+    )
+    (1): BasicBlock(
+      (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (relu): ReLU(inplace)
+      (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+    )
+  )
+  (layer2): Sequential(
+    (0): BasicBlock(
+      (conv1): Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (relu): ReLU(inplace)
+      (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (downsample): Sequential(
+        (0): Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+    )
+    (1): BasicBlock(
+      (conv1): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (relu): ReLU(inplace)
+      (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+    )
+  )
+  (upSample2): Upsample(scale_factor=2, mode=nearest)
+  (layer3): Sequential(
+    (0): BasicBlock(
+      (conv1): Conv2d(128, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (relu): ReLU(inplace)
+      (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (downsample): Sequential(
+        (0): Conv2d(128, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+    )
+    (1): BasicBlock(
+      (conv1): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (relu): ReLU(inplace)
+      (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+    )
+  )
+  (layer4): Sequential(
+    (0): BasicBlock(
+      (conv1): Conv2d(64, 3, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (relu): ReLU(inplace)
+      (conv2): Conv2d(3, 3, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (downsample): Sequential(
+        (0): Conv2d(64, 3, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (1): BatchNorm2d(3, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+    )
+    (1): BasicBlock(
+      (conv1): Conv2d(3, 3, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (relu): ReLU(inplace)
+      (conv2): Conv2d(3, 3, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+    )
+  )
+  (upSample3): Upsample(scale_factor=2, mode=nearest)
+)
+[Network decoder] Total number of parameters : 9.747 M
+-----------------------------------------------
