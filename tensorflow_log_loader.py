@@ -55,16 +55,20 @@ def plot_tensorflow_log(args):
         ax1.plot(x, y[:,0], label='loss_style', color="tab:orange")
         ax1.plot(x, y[:,1], label='loss_content', color="tab:blue")
         if args.trend:
-            if not args.linear:
-                y_r=np.log(y)
-                y_trend1 = np.exp(np.poly1d(np.polyfit(x,y_r[:,0],5))(x))
-                y_trend2 = np.exp(np.poly1d(np.polyfit(x,y_r[:,1],5))(x))
-            else:
-                y_trend1 = np.poly1d(np.polyfit(x,y[:,0],5))(x)
-                y_trend2 = np.poly1d(np.polyfit(x,y[:,1],5))(x)
+            y_trend = np.zeros([steps,2])
+            for i in range(steps):
+                if i < 1000:
+                    y_trend[i, 0] = np.mean(y[:i+1, 0])
+                    y_trend[i, 1] = np.mean(y[:i+1, 1])
+                elif i > steps-1000:
+                    y_trend[i, 0] = np.mean(y[i-1000:, 0])
+                    y_trend[i, 1] = np.mean(y[i-1000:, 1])
+                else:
+                    y_trend[i, 0] = np.mean(y[i-1000:i+1000, 0])
+                    y_trend[i, 1] = np.mean(y[i-1000:i+1000, 1])
 
-            ax1.plot(x, y_trend1, label='loss_style_trend', color="red")
-            ax1.plot(x, y_trend2, label='loss_content_trend', color="blue")
+            ax1.plot(x, y_trend[:, 0], label='loss_style_trend', color="red")
+            ax1.plot(x, y_trend[:, 1], label='loss_content_trend', color="blue")
         print("Final content loss: %.3f style loss: %.3f"%(np.mean(y[-100:,1]),np.mean(y[-100:,1])))
 
     ax1.set_xlabel("Iter")
@@ -73,6 +77,7 @@ def plot_tensorflow_log(args):
     ax1.legend(loc='upper right', frameon=True)
     if not args.linear:
         ax1.set_yscale("log")
+    ax1.set_ylim([0.5,5*10**2])
     if args.save:
         if not os.path.exists(args.save_dir):
             os.mkdir(args.save_dir)
