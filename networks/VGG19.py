@@ -32,11 +32,8 @@ def vgg19_dec(decoder=None, BN=False):
 ########################################################################           
 #                          Full VGG decoder                            #
 ########################################################################
-def vgg19B_dec(decoder=None, BN=False):
-    if BN:
-        model = Vgg19BN_long_dec
-    else:
-        model = Vgg19_long_dec
+def vgg19B_dec(decoder=None):
+    model = Vgg19_long_dec
     if decoder != None:
         model.load_state_dict(torch.load(decoder))
     return model
