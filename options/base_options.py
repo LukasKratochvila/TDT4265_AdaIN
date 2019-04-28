@@ -4,92 +4,60 @@ import os
 
 
 class BaseOptions():
-    """This class defines options used during both training and test time.
+    """
+    This class defines options used during both training and test time.
 
     It also implements several helper functions such as parsing, printing, and saving the options.
     It also gathers additional options defined in <modify_commandline_options> functions in both dataset class and model class.
     """
 
     def __init__(self):
-        """Reset the class; indicates the class hasn't been initailized"""
+        """
+        Reset the class; indicates the class hasn't been initailized
+        """
         self.initialized = False
 
     def initialize(self, parser):
-        """Define the common options that are used in both training and test."""
+        """
+        Define the common options that are used in both training and test.
+        """
         # Basic parameters
         parser.add_argument('--content', type=str,
-                            help='File path to the content image')
+                            help='File path to the content image or multiple content \
+                            images separated by commas')
         parser.add_argument('--content_dir', type=str,
-                            help='Directory path to a batch of content images')
+                            help='Directory path to directory of content images')
         parser.add_argument('--style', type=str,
                             help='File path to the style image, or multiple style \
-                            images separated by commas if you want to do style \
-                            interpolation or spatial control')
+                            images separated by commas')
         parser.add_argument('--style_dir', type=str,
-                            help='Directory path to a batch of style images')
+                            help='Directory path to directory of style images')
         parser.add_argument('--enc_w', type=str, default='weights/vgg_normalised.pth',
-                            help='specify decoder weights')
+                            help='Specify encoder weights [default: weights/vgg_normalised.pth]')
         parser.add_argument('--dec', type=str, default='VGG19',
-                            help='specify decoder architecture [VGG19 | resnet18 | inceptionv3]')
+                            help='Specify decoder architecture [VGG19 | resnet18 | inceptionv3] [default: VGG19]')
         parser.add_argument('--dec_w', type=str, default='weights/decoder.pth', 
-                            help='specify decoder weights')
+                            help='Specify decoder weights [default: weights/decoder.pth]')
         parser.add_argument('--dec_BN', action='store_true',
-                            help='Use decoder with batch normalization')
-
-
-        """
-        parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
-        parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
-        # dataset parameters
-        parser.add_argument('--dataset_mode', type=str, default='unaligned', help='chooses how datasets are loaded. [unaligned | aligned | single | colorization]')
-        parser.add_argument('--direction', type=str, default='AtoB', help='AtoB or BtoA')
-        parser.add_argument('--serial_batches', action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')
-        parser.add_argument('--num_threads', default=4, type=int, help='# threads for loading data')
-        parser.add_argument('--batch_size', type=int, default=1, help='input batch size')
-        parser.add_argument('--load_size', type=int, default=286, help='scale images to this size')
-        parser.add_argument('--crop_size', type=int, default=256, help='then crop to this size')
-        parser.add_argument('--max_dataset_size', type=int, default=float("inf"), help='Maximum number of samples allowed per dataset. If the dataset directory contains more than max_dataset_size, only a subset is loaded.')
-        parser.add_argument('--preprocess', type=str, default='resize_and_crop', help='scaling and cropping of images at load time [resize_and_crop | crop | scale_width | scale_width_and_crop | none]')
-        parser.add_argument('--no_flip', action='store_true', help='if specified, do not flip the images for data augmentation')
-        parser.add_argument('--display_winsize', type=int, default=256, help='display window size for both visdom and HTML')
-        # additional parameters
-        parser.add_argument('--verbose', action='store_true', help='if specified, print more debugging information')
-        parser.add_argument('--suffix', default='', type=str, help='customized suffix: opt.name = opt.name + suffix: e.g., {model}_{netG}_size{load_size}')
-        """
+                            help='Use decoder with batch normalization [default: False]')
         self.initialized = True
         return parser
 
     def gather_options(self):
-        """Initialize our parser with basic options(only once).
-        Add additional model-specific and dataset-specific options.
-        These options are defined in the <modify_commandline_options> function
-        in model and dataset classes.
+        """
+        Initialize our parser with basic options(only once).
         """
         if not self.initialized:  # check if it has been initialized
             parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
             parser = self.initialize(parser)
-        """
-        # get the basic options
-        opt, _ = parser.parse_known_args()
-
-        # modify model-related parser options
-        model_name = opt.model
-        model_option_setter = models.get_option_setter(model_name)
-        parser = model_option_setter(parser, self.isTrain)
-        opt, _ = parser.parse_known_args()  # parse again with new defaults
-
-        # modify dataset-related parser options
-        dataset_name = opt.dataset_mode
-        dataset_option_setter = data.get_option_setter(dataset_name)
-        parser = dataset_option_setter(parser, self.isTrain)
-        """
         # save and return the parser
         self.parser = parser
         
         return parser.parse_args()
 
     def print_options(self, opt):
-        """Print and save options
+        """
+        Print and save options
 
         It will print both current options and default values(if different).
         It will save options into a text file / [checkpoints_dir] / opt.txt
@@ -124,38 +92,22 @@ class BaseOptions():
                 opt_file.write('\n')
 
     def parse(self):
-        """Parse our options, create checkpoints directory suffix, and set up gpu device."""
+        """
+        Parse our options, create checkpoints directory suffix, and set up gpu device.
+        """
         opt = self.gather_options()
         opt.isTrain = self.isTrain   # train or test
         if opt.isTrain:
             opt.expr_dir = os.path.join(opt.save_dir, opt.name)
             if not os.path.exists(opt.save_dir):
                 os.mkdir(opt.save_dir)                
-            #if not os.path.exists(opt.log_dir):
-                #os.mkdir(opt.log_dir)
             assert (opt.content_dir or opt.style_dir), "Missing content or style dir"
         
         # Either --content or --contentDir should be given.
         assert (opt.content or opt.content_dir), "Missing content image/s"
         # Either --style or --styleDir should be given.
         assert (opt.style or opt.style_dir), "Missing style image/s"
-        """
-        # process opt.suffix
-        if opt.suffix:
-            suffix = ('_' + opt.suffix.format(**vars(opt))) if opt.suffix != '' else ''
-            opt.name = opt.name + suffix
-        """
+
         self.print_options(opt)
-        """
-        # set gpu ids
-        str_ids = opt.gpu_ids.split(',')
-        opt.gpu_ids = []
-        for str_id in str_ids:
-            id = int(str_id)
-            if id >= 0:
-                opt.gpu_ids.append(id)
-        if len(opt.gpu_ids) > 0:
-            torch.cuda.set_device(opt.gpu_ids[0])
-        """
         self.opt = opt
         return self.opt
