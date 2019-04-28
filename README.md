@@ -39,7 +39,8 @@ Note that the `--dec` option only takes one of four architectures,
 - `inceptionv3`,
 - `VGG19` and
 - `VGG19B` (the uncropped VGG19).
-When `--dec` is given, `--dec_w` should point to a .pth weights file that fits this architecture. The default is `VGG19` and `./weights/vgg_normalised.pth`, which is the pretrained model from the original implementation.
+
+When `--dec` is given, `--dec_w` should point to a .pth weights file that fits this architecture. The default is `VGG19` and `./weights/vgg_normalised.pth`, which is the pretrained model from the original implementation. Note: If you want to use the uncropped encoder, you must also uncomment the last two blocks in the encoder, as well as set the number of blocks from 4 to 6. This must be done in file `./networks/net.py`, There is currently no command-line option for this.
 ### Training
 For a list of all options, type:
 ```sh 
@@ -60,3 +61,12 @@ To do this, type:
 $ python3 tensorflow_log_loader.py --log_name experiments/<experiment name>/events.out.tfevents.<ID> \ 
   --save --save_dir experiments/mini_datasets/ --linear
 ```
+## Datasets
+
+### Content
+- [Imagenet ILSVRC2015 detection set](http://www.image-net.org/download-images)
+- [PASCAL VOC2012](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/index.html#devkit)
+- [COCO train images 2014](http://cocodataset.org/#download)
+
+### Style
+- [Wikiart dataset for style information](https://github.com/cs-chan/ArtGAN/tree/master/WikiArt%20Dataset)
