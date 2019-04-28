@@ -97,13 +97,14 @@ class BaseOptions():
         """
         opt = self.gather_options()
         opt.isTrain = self.isTrain   # train or test
-        self.print_options(opt)
         if opt.isTrain:
             opt.expr_dir = os.path.join(opt.save_dir, opt.name)
             if not os.path.exists(opt.save_dir):
                 os.mkdir(opt.save_dir)                
             assert (opt.content_dir or opt.style_dir), "Missing content or style dir"
-        else: 
+            self.print_options(opt)
+        else:
+            self.print_options(opt)
             if opt.content:
                 opt.content_paths = opt.content.split(',')
                 if len(opt.content_paths) == 1:
