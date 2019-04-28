@@ -43,7 +43,7 @@ def plot_tensorflow_log(args):
         loss_content = event_acc.Scalars('loss_content')
         loss_style = event_acc.Scalars('loss_style')
 
-        steps = len(loss_content)
+        steps = args.num_print if args.num_print != 0 else len(loss_content)
         x = np.zeros(steps, )
         y = np.zeros([steps,2])
 
@@ -69,15 +69,15 @@ def plot_tensorflow_log(args):
 
             ax1.plot(x, y_trend[:, 0], label='loss_style_trend', color="red")
             ax1.plot(x, y_trend[:, 1], label='loss_content_trend', color="blue")
-        print("Final content loss: %.3f style loss: %.3f"%(np.mean(y[-100:,1]),np.mean(y[-100:,1])))
+        print("Final content loss: %.3f style loss: %.3f"%(np.mean(y[-100:,0]),np.mean(y[-100:,1])))
 
     ax1.set_xlabel("Iter")
     ax1.set_ylabel("loss")
+    ax1.set_ylim(args.y_lim)
     ax1.set_title("Training Progress")
     ax1.legend(loc='upper right', frameon=True)
     if not args.linear:
         ax1.set_yscale("log")
-    ax1.set_ylim([0.5,5*10**2])
     if args.save:
         if not os.path.exists(args.save_dir):
             os.mkdir(args.save_dir)
@@ -95,6 +95,8 @@ if __name__ == '__main__':
     parser.add_argument('--trend', action='store_false', help='disable plotting trend')
     parser.add_argument('--save_dir', type=str, default='./plots',
 			help='Dir for save plot, default ./plots')
+    parser.add_argument('--y_lim', type=list, default=[0.1,50], help='List of y_lim [default: [0.1,50]]')
+    parser.add_argument('--num_print', type=int, default=0, help='Number of print data samples [default: all]')
     parser.add_argument('--num_load', type=int, default=80000, help='Number of loaded data samples [default: 80000]')
     args = parser.parse_args()
     
