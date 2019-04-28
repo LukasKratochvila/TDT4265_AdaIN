@@ -60,7 +60,7 @@ class BaseOptions():
         Print and save options
 
         It will print both current options and default values(if different).
-        It will save options into a text file / [checkpoints_dir] / opt.txt
+        It will save options into a text file / [save_dir] / [name] / opt.txt
         """
         message = ''
         message += '----------------- Options ---------------\n'
