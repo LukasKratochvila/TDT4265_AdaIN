@@ -128,13 +128,15 @@ for i,content_path in enumerate(content_paths):
             save_image(output, output_name)
         
         time_elapsed[i] = time.time() - start_time
+        
         style_c = torch.FloatTensor(style[:1].shape).zero_()
         for i, w in enumerate(interpolation_weights):
             style_c += w * style[i] 
-        result = output[:style_c.shape[0],:style_c.shape[1],:style_c.shape[2],:style_c.shape[3]]
+        size = torch.min(torch.tensor((content.shape,output.shape,style_c.shape)),0)
+        result = output[:size[0][0],:size[0][1],:size[0][2],:size[0][3]]
         result = result.to(device)
-        content_c = content[:result.shape[0],:result.shape[1],:result.shape[2],:result.shape[3]]
-        style_c = style[:result.shape[0],:result.shape[1],:result.shape[2],:result.shape[3]]
+        content_c = content[:size[0][0],:size[0][1],:size[0][2],:size[0][3]]
+        style_c = style[:size[0][0],:size[0][1],:size[0][2],:size[0][3]]
         content_losses[i] = network.losses(content_c,result).cpu()
         style_losses[i] = network.losses(style_c,result).cpu()
         
@@ -158,10 +160,11 @@ for i,content_path in enumerate(content_paths):
                 save_image(output, output_name)
             time_elapsed[i][j] = time.time() - start_time
             
-            result = output[:style.shape[0],:style.shape[1],:style.shape[2],:style.shape[3]]
+            size = torch.min(torch.tensor((content.shape,output.shape,style.shape)),0)
+            result = output[:size[0][0],:size[0][1],:size[0][2],:size[0][3]]
             result = result.to(device)
-            content_c = content[:result.shape[0],:result.shape[1],:result.shape[2],:result.shape[3]]
-            style_c = style[:result.shape[0],:result.shape[1],:result.shape[2],:result.shape[3]]
+            content_c = content[:size[0][0],:size[0][1],:size[0][2],:size[0][3]]
+            style_c = style[:size[0][0],:size[0][1],:size[0][2],:size[0][3]]
             content_losses[i][j] = network.losses(content_c,result).cpu()
             style_losses[i][j] = network.losses(style_c,result).cpu()
 message = ""
