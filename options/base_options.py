@@ -73,7 +73,7 @@ class BaseOptions():
         message += '----------------- End -------------------'
         print(message)
 
-        # save to the disk
+        # If trainig save to the disk
         if opt.isTrain:
             if isinstance(opt.expr_dir, list) and not isinstance(opt.expr_dir, str):
                 for path in opt.expr_dir:
@@ -93,21 +93,41 @@ class BaseOptions():
 
     def parse(self):
         """
-        Parse our options, create checkpoints directory suffix, and set up gpu device.
+        Parse our options. If train then check dirs. If test parse the contents and styles paths and weights of interpolation.
         """
         opt = self.gather_options()
         opt.isTrain = self.isTrain   # train or test
+        self.print_options(opt)
         if opt.isTrain:
             opt.expr_dir = os.path.join(opt.save_dir, opt.name)
             if not os.path.exists(opt.save_dir):
                 os.mkdir(opt.save_dir)                
             assert (opt.content_dir or opt.style_dir), "Missing content or style dir"
-        
+        else: 
+            if opt.content:
+                opt.content_paths = opt.content.split(',')
+                if len(opt.content_paths) == 1:
+                    opt.content_paths = [opt.content]
+            else:
+                opt.content_paths = [os.path.join(opt.content_dir, f) for f in os.listdir(opt.content_dir)]
+            opt.do_interpolation = False
+            if opt.style:
+                opt.style_paths = opt.style.split(',')
+                if len(opt.style_paths) == 1:
+                    opt.style_paths = [opt.style]
+                elif opt.style_interpolation_weights != '':
+                    opt.do_interpolation = True
+                    weights = [int(i) for i in opt.style_interpolation_weights.split(',')]
+                    opt.interpolation_weights = [w / sum(weights) for w in weights]
+            else:
+                opt.style_paths = [os.path.join(opt.style_dir, f) for f in
+                                       os.listdir(opt.style_dir)]
+            if not os.path.exists(opt.output):
+                os.mkdir(opt.output)
         # Either --content or --contentDir should be given.
         assert (opt.content or opt.content_dir), "Missing content image/s"
         # Either --style or --styleDir should be given.
         assert (opt.style or opt.style_dir), "Missing style image/s"
 
-        self.print_options(opt)
         self.opt = opt
         return self.opt

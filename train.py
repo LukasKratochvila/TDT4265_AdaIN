@@ -35,7 +35,7 @@ def train_transform():
 
 class FlatFolderDataset(data.Dataset):
     """
-    Definition of Dataloader.
+    Definition of Dataset for DataLoader.
     """
     def __init__(self, root, transform):
         super(FlatFolderDataset, self).__init__()
@@ -84,11 +84,15 @@ elif args.dec == 'inceptionv3':
     decoder = InceptionV3.inception3_dec()
 else:
     assert False,"Wrong decoder"
+
+########################################################################           
+#                        Initializaton                                 #
+########################################################################
     
 # Select cuda device for training, cpu is not option
 device = torch.device('cuda')
 
-# Create training architecture  
+# Initialization training architecture  
 network = net.Net(encoder, decoder)
 network.print_networks(args.expr_dir,args.verbose)
 network.train()
@@ -97,19 +101,15 @@ network.to(device)
 # Open log file
 writer = SummaryWriter(log_dir=args.expr_dir)  
 
-########################################################################           
-#                        Inicializaton                                 #
-########################################################################
-
-# Inicialization of transformation
+# Initialization of transformation
 content_tf = train_transform()
 style_tf = train_transform()
 
-# Inicialization of Datasets
+# Initialization of Datasets
 content_dataset = FlatFolderDataset(args.content_dir, content_tf)
 style_dataset = FlatFolderDataset(args.style_dir, style_tf)
 
-# Inicialization of DataLoader iter
+# Initialization of DataLoader iter
 content_iter = iter(data.DataLoader(
     content_dataset, batch_size=args.batch_size,
     sampler=InfiniteSamplerWrapper(content_dataset),
@@ -119,7 +119,7 @@ style_iter = iter(data.DataLoader(
     sampler=InfiniteSamplerWrapper(style_dataset),
     num_workers=args.n_threads))
 
-# Inicialization of optimizer
+# Initialization of optimizer
 optimizer = torch.optim.Adam(network.decoder.parameters(), lr=args.lr)
 
 ########################################################################           
