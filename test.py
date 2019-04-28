@@ -29,6 +29,9 @@ def test_transform(size, crop):
 
 def style_transfer(encoder, decoder, content, style, alpha=1.0,
                    interpolation_weights=None):
+    """
+    Fuction that implements the Encode -> AdaIN -> Decode
+    """
     assert (0.0 <= alpha <= 1.0)
     content_f = encoder(content)
     style_f = encoder(style)
@@ -74,7 +77,7 @@ else:
 if not os.path.exists(args.output):
     os.mkdir(args.output)
 
-# if we don't get the model we use vgg
+# if we don't get the model we use vgg (default option)
 if args.enc_w == 'weights/vgg_normalised.pth':
     encoder = VGG19.vgg19(args.enc_w)
 else:
