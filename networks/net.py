@@ -1,18 +1,29 @@
+import torch
 import torch.nn as nn
 import os
 
 from function import adaptive_instance_normalization as adain
 from function import calc_mean_std
 
+"""
+Classe that connects the full architecture 
+togheter: encoder, AdaIN and decoder
+"""
+
 class Net(nn.Module):
     def __init__(self, encoder, decoder):#, switch):
         super(Net, self).__init__()
         enc_layers = list(encoder.children())
         
+        
         self.enc_1 = nn.Sequential(*enc_layers[:4])  # input -> relu1_1
         self.enc_2 = nn.Sequential(*enc_layers[4:11])  # relu1_1 -> relu2_1
         self.enc_3 = nn.Sequential(*enc_layers[11:18])  # relu2_1 -> relu3_1
         self.enc_4 = nn.Sequential(*enc_layers[18:31])  # relu3_1 -> relu4_1
+        '''
+        The following two code lines should be uncommnted in order to run the full VGG network.
+        The variable self.num_enc should also be changed to 6.
+        '''
         #self.enc_5 = nn.Sequential(*enc_layers[31:40])  # relu4_1 -> relu5_1
         #self.enc_6 = nn.Sequential(*enc_layers[40:53])  # relu5_1 -> relu5_4
         
@@ -73,6 +84,19 @@ class Net(nn.Module):
         for i in range(1, len(style_feats)):
             loss_s += self.calc_style_loss(g_t_feats[i], style_feats[i])
         return loss_c, loss_s
+    
+    def losses(self, style, result):
+        '''
+        Function that computes the losses that are printed during test.
+        '''
+        style_feats = self.encode_with_intermediate(style)
+        result_feats = self.encode_with_intermediate(result)
+
+        losses = torch.Tensor(len(result_feats)+1,1)
+        losses[0] = self.calc_content_loss(style_feats[-1], result_feats[-1])
+        for i in range(1,len(result_feats)+1):
+            losses[i] = self.calc_style_loss(style_feats[i-1], result_feats[i-1])
+        return losses.transpose(0,1)
     
     def print_networks(self, expr_dir, verbose):
         """Print the total number of parameters in the network and (if verbose) network architecture

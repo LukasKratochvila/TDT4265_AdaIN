@@ -22,6 +22,9 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True  # Disable OSError: image file is truncat
 
 
 def train_transform():
+    """
+    Definition of train transform - resize and crop.
+    """
     transform_list = [
         transforms.Resize(size=(512, 512)),
         transforms.RandomCrop(256),
@@ -31,6 +34,9 @@ def train_transform():
 
 
 class FlatFolderDataset(data.Dataset):
+    """
+    Definition of Dataset for DataLoader.
+    """
     def __init__(self, root, transform):
         super(FlatFolderDataset, self).__init__()
         self.root = root
@@ -51,45 +57,59 @@ class FlatFolderDataset(data.Dataset):
 
 
 def adjust_learning_rate(optimizer, iteration_count):
-    """Imitating the original implementation"""
+    """
+    Imitating the original implementation
+    """
     lr = args.lr / (1.0 + args.lr_decay * iteration_count)
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
+# Getting train options from command line
 args = TrainOptions().parse()
 
-device = torch.device('cuda')
-
-writer = SummaryWriter(log_dir=args.expr_dir)
-
-# if we don't get the model we use vgg
+# Choose encoder architecture and load weights
 if args.enc_w == 'weights/vgg_normalised.pth':
     encoder = VGG19.vgg19(args.enc_w)
 else:
     assert False,"Wrong encoder"
-        
+
+# Choose decoder architecture     
 if args.dec == 'VGG19':
-    decoder = VGG19.vgg19_dec()
+    decoder = VGG19.vgg19_dec(BN=args.dec_BN)
 elif args.dec == 'VGG19B':
-    decoder = VGG19.vgg19B_dec()
+    decoder = VGG19.vgg19B_dec(BN=args.dec_BN)
 elif args.dec == 'resnet18':
     decoder = ResNet.resnet18_dec()
 elif args.dec == 'inceptionv3':
     decoder = InceptionV3.inception3_dec()
 else:
     assert False,"Wrong decoder"
+
+########################################################################           
+#                        Initializaton                                 #
+########################################################################
     
+# Select cuda device for training, cpu is not option
+device = torch.device('cuda')
+
+# Initialization training architecture  
 network = net.Net(encoder, decoder)
 network.print_networks(args.expr_dir,args.verbose)
 network.train()
 network.to(device)
 
+# Open log file
+writer = SummaryWriter(log_dir=args.expr_dir)  
+
+# Initialization of transformation
 content_tf = train_transform()
 style_tf = train_transform()
 
+# Initialization of Datasets
 content_dataset = FlatFolderDataset(args.content_dir, content_tf)
 style_dataset = FlatFolderDataset(args.style_dir, style_tf)
 
+# Initialization of DataLoader iter
 content_iter = iter(data.DataLoader(
     content_dataset, batch_size=args.batch_size,
     sampler=InfiniteSamplerWrapper(content_dataset),
@@ -99,7 +119,12 @@ style_iter = iter(data.DataLoader(
     sampler=InfiniteSamplerWrapper(style_dataset),
     num_workers=args.n_threads))
 
+# Initialization of optimizer
 optimizer = torch.optim.Adam(network.decoder.parameters(), lr=args.lr)
+
+########################################################################           
+#                        Training                                      #
+########################################################################
 
 for i in tqdm(range(args.max_iter)):
     adjust_learning_rate(optimizer, iteration_count=i)

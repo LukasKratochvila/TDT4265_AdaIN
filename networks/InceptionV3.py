@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 """"
-Definition of models related to InceptionV3 and function used for creating
+Definition of models related to InceptionV3.
 """
 
 def inception3_dec(decoder=None):
